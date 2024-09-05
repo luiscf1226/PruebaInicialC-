@@ -1,0 +1,16 @@
+{
+  "steps": [
+    {
+      "input": "1",
+      "description": "Seleccionar opción 1 del menú principal"
+    },
+    {
+      "input": "Juan",
+      "description": "Ingresar nombre del usuario"
+    },
+    {
+      "input": "3",
+      "description": "Seleccionar opción 3 para salir"
+    }
+  ]
+}

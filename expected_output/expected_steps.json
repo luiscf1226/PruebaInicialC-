@@ -1,0 +1,20 @@
+{
+  "steps": [
+    {
+      "output": "Bienvenido al programa. Seleccione una opción:",
+      "description": "Mensaje de bienvenida y opciones del menú"
+    },
+    {
+      "output": "Ha seleccionado la opción 1. Por favor, ingrese su nombre:",
+      "description": "Confirmación de selección y solicitud de nombre"
+    },
+    {
+      "output": "Hola, Juan. Gracias por usar el programa.",
+      "description": "Saludo personalizado"
+    },
+    {
+      "output": "Saliendo del programa. ¡Hasta luego!",
+      "description": "Mensaje de despedida"
+    }
+  ]
+}
