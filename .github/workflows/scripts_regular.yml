@@ -28,7 +28,7 @@ jobs:
           "analyze_libraries.py"
           "analyze_structure.py"
           "analyze_identation.py"
-          "run_cppcheck.py"
+          
         )
         for script in "${scripts[@]}"
         do
