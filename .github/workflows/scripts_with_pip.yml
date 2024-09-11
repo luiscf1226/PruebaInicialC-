@@ -1,4 +1,4 @@
-name: Run Python Scripts with pip
+name: Run Python and C++ Scripts
 
 on:
   push:
@@ -17,17 +17,17 @@ jobs:
   run_scripts:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.x'
     
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cppcheck
+        sudo apt-get install -y cppcheck g++
     
     - name: Install Python dependencies
       run: |
@@ -36,7 +36,7 @@ jobs:
         python -m spacy download es_core_news_sm
         python -m nltk.downloader wordnet
     
-    - name: Run scripts
+    - name: Run Python scripts
       run: |
         cd scripts
         python run_plagiarism_1.py
@@ -44,6 +44,18 @@ jobs:
         python analyze_spelling.py
         python run_cppcheck.py
       shell: bash
+    
+    - name: Compile and run C++ script
+      run: |
+        g++ -std=c++11 src/main.cpp -o main
+        ./main
+      shell: bash
+    
+    - name: Upload output as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: script-output
+        path: output/
     
     - name: Always succeed
       run: exit 0
