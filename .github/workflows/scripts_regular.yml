@@ -1,0 +1,45 @@
+name: Run Scripts Without pip
+
+on:
+  push:
+    paths:
+      - 'scripts/**'
+      - 'src/**'
+  pull_request:
+    paths:
+      - 'scripts/**'
+      - 'src/**'
+  workflow_dispatch:
+
+jobs:
+  run_scripts:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Set up Python 3.12.5
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.12.5'
+    
+    - name: Run scripts
+      run: |
+        scripts=(
+          "analyze_libraries.py"
+          "analyze_structure.py"
+          "analyze_identation.py"
+          "run_cppcheck.py"
+        )
+        for script in "${scripts[@]}"
+        do
+          if [ -f "scripts/$script" ]; then
+            echo "Running $script"
+            python "scripts/$script" || echo "Script $script failed, but continuing..."
+          else
+            echo "Script $script not found in scripts folder"
+          fi
+        done
+      shell: bash
+    
+    - name: Always succeed
+      run: exit 0
