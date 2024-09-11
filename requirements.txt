@@ -1,0 +1,7 @@
+spellchecker
+numpy
+scikit-learn
+transformers
+torch
+nltk
+spacy
