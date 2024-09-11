@@ -1,42 +1,65 @@
 #include <iostream>
 #include <vector>
+#include <algorithm>
 #include <string>
-#include "estudiante.h"
+#include <map>
+#include <cmath>
+#include <fstream>
 
-// Función para calcular el promedio de calificaciones
-double calcularPromedio(const std::vector<double>& calificaciones) {
-    double suma = 0;
-    for (const auto& calificacion : calificaciones) {
-        suma += calificacion;
-    }
-    return calificaciones.empty() ? 0 : suma / calificaciones.size();
+using namespace std;
+
+// Funcion para calcular el promedio
+double calcularPromedio(const vector<int>& numeros) {
+double suma = 0;
+for (int num : numeros) {
+suma += num;
+}
+return suma / numeros.size();
 }
 
-// Función principal del programa
 int main() {
-    // Crear un vector de estudiantes
-    std::vector<Estudiante> estudiantes;
-
-    // Agregar algunos estudiantes
-    estudiantes.push_back(Estudiante("Juan Pérez", 20));
-    estudiantes.push_back(Estudiante("María García", 22));
-    estudiantes.push_back(Estudiante("Carlos López", 19));
-
-    // Agregar calificaciones a los estudiantes
-    estudiantes[0].agregarCalificacion(85.5);
-    estudiantes[0].agregarCalificacion(90.0);
-    estudiantes[1].agregarCalificacion(78.5);
-    estudiantes[1].agregarCalificacion(92.5);
-    estudiantes[2].agregarCalificacion(88.0);
-    estudiantes[2].agregarCalificacion(76.5);
-
-    // Imprimir información de los estudiantes
-    for (const auto& estudiante : estudiantes) {
-        std::cout << "Nombre: " << estudiante.obtenerNombre() << std::endl;
-        std::cout << "Edad: " << estudiante.obtenerEdad() << std::endl;
-        std::cout << "Promedio: " << calcularPromedio(estudiante.obtenerCalificaciones()) << std::endl;
-        std::cout << std::endl;
+  cout << "Bienvenido al programa de prueba para los scripts de analisis!" << endl;
+  
+    vector<int> datos = {10, 20, 30, 40, 50};
+    
+        // Calculo del promedio
+        double promedio = calcularPromedio(datos);
+    
+  cout << "El promedio de los datos es: " << promedio << endl;
+  
+      // Prueba de ortografia en español
+  cout << "Esto es una prueba de ortografía con algunos errores intencionales." << endl;
+  cout << "El perro ladra mucho por la noche." << endl;
+  cout << "El gato duerme en el sofa todo el dia." << endl;
+  cout << "La computadora es una herramienta muy util." << endl;
+  
+  // Prueba de identacion incorrecta
+    for (int i = 0; i < 5; i++) {
+  cout << "Numero: " << i << endl;
+      if (i % 2 == 0) {
+    cout << "Es par" << endl;
+  } else {
+          cout << "Es impar" << endl;
+      }
     }
-
-    return 0;
+  
+  // Uso de diferentes tipos de datos y estructuras
+  map<string, int> edades;
+  edades["Juan"] = 25;
+  edades["Maria"] = 30;
+  
+  // Operaciones matematicas
+  double raiz = sqrt(16);
+  int potencia = pow(2, 3);
+  
+  // Manejo de archivos
+  ofstream archivo("prueba.txt");
+  if (archivo.is_open()) {
+    archivo << "Esto es una prueba de escritura en archivo." << endl;
+    archivo.close();
+  }
+  
+  cout << "Fin del programa de prueba. Gracias por utilizarlo!" << endl;
+  
+  return 0;
 }
