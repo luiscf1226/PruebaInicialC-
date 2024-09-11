@@ -1,16 +1,14 @@
-name: Run Python Scripts
+name: Run Scripts Without pip
 
 on:
   push:
     paths:
       - 'scripts/**'
       - 'src/**'
-      - 'requirements.txt'
   pull_request:
     paths:
       - 'scripts/**'
       - 'src/**'
-      - 'requirements.txt'
   workflow_dispatch:
 
 jobs:
@@ -19,31 +17,30 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     
-    - name: Set up Python
+    - name: Set up Python 3.12.5
       uses: actions/setup-python@v2
       with:
         python-version: '3.12.5'
     
-    - name: Install system dependencies
+    - name: Install Cppcheck
       run: |
         sudo apt-get update
         sudo apt-get install -y cppcheck
     
-    - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        python -m spacy download es_core_news_sm
-        python -m nltk.downloader wordnet
-    
     - name: Run scripts
       run: |
         cd scripts
-        python run_plagiarism_1.py
-        python extract_elements.py
-        python analyze_spelling.py
+        python analyze_libraries.py
+        python analyze_structure.py
+        python analyze_identation.py
         python run_cppcheck.py
       shell: bash
+    
+    - name: Upload output as artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: script-output
+        path: output/
     
     - name: Always succeed
       run: exit 0
