@@ -22,7 +22,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.x'
+        python-version: '3.12.5'
     
     - name: Install system dependencies
       run: |
@@ -43,6 +43,8 @@ jobs:
         python extract_elements.py
         python analyze_spelling.py
         python run_cppcheck.py
+      env:
+        PYTHONWARNINGS: "ignore:clean_up_tokenization_spaces:FutureWarning"
       shell: bash
     
     - name: Compile and run C++ script
