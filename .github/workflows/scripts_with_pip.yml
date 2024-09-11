@@ -1,0 +1,41 @@
+name: Run Python Scripts
+
+on:
+  push:
+    paths:
+      - 'scripts/**'
+      - 'src/**'
+  pull_request:
+    paths:
+      - 'scripts/**'
+      - 'src/**'
+  workflow_dispatch:
+
+jobs:
+  run_scripts:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        python -m spacy download es_core_news_sm
+        python -m nltk.downloader wordnet
+    
+    - name: Run scripts
+      run: |
+        cd scripts
+        python run_plagiarism_1.py
+        python extract_elements.py
+        python analyze_spelling.py
+      shell: bash
+    
+    - name: Always succeed
+      run: exit 0
