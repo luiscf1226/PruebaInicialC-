@@ -42,12 +42,23 @@ def count_functions():
     return function_count
 
 def analyze_duplications():
-    try:
-        result = subprocess.run(['cpd', '--minimum-tokens', '100', '--files', SRC_DIR],
-                                capture_output=True, text=True, check=True)
-        return len(re.findall(r'Found a \d+-line \(\d+ tokens\) duplication', result.stdout))
-    except subprocess.CalledProcessError:
-        return "N/A (CPD no disponible)"
+    duplications = 0
+    all_code_blocks = []
+    
+    for root, _, files in os.walk(SRC_DIR):
+        for file in files:
+            if file.endswith(('.cpp', '.h')):
+                with open(os.path.join(root, file), 'r') as f:
+                    content = f.read()
+                    code_blocks = re.findall(r'\{[^{}]*\}', content)
+                    all_code_blocks.extend(code_blocks)
+    
+    for i, block in enumerate(all_code_blocks):
+        for j in range(i + 1, len(all_code_blocks)):
+            if len(block) > 50 and block == all_code_blocks[j]:
+                duplications += 1
+    
+    return duplications
 
 def run_cppcheck():
     try:
@@ -57,6 +68,9 @@ def run_cppcheck():
         warnings = len(re.findall(r'severity="warning"', result.stdout))
         return {'errors': errors, 'warnings': warnings}
     except subprocess.CalledProcessError:
+        return {'errors': "N/A", 'warnings': "N/A"}
+    except FileNotFoundError:
+        print("Cppcheck no está instalado o no se encuentra en el PATH del sistema.")
         return {'errors': "N/A", 'warnings': "N/A"}
 
 def generate_report(loc, complexity, function_count, duplications, cppcheck_results):
