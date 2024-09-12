@@ -13,7 +13,7 @@ def verificar_ortografia(texto, spell):
     errores = spell.unknown(palabras)
     return [f"Posible error en '{palabra}': {spell.correction(palabra)}" for palabra in errores]
 
-def verificar_acentos(texto):
+def verificar_acentos(texto, spell):
     palabras = re.findall(r'\b\w+\b', texto)
     errores = []
     for palabra in palabras:
@@ -35,7 +35,7 @@ def analizar_archivo(ruta_archivo, spell):
     
     for salida in salidas:
         errores_ortografia = verificar_ortografia(salida, spell)
-        errores_acentos = verificar_acentos(salida)
+        errores_acentos = verificar_acentos(salida, spell)
         if errores_ortografia or errores_acentos:
             errores.append({"texto": salida, "errores": errores_ortografia + errores_acentos})
     
