@@ -3,6 +3,7 @@ import re
 import json
 import hashlib
 from collections import Counter
+from datetime import datetime
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 def extraer_elementos(contenido):
@@ -14,6 +15,7 @@ def extraer_elementos(contenido):
     estructuras_control = re.findall(r'\b(if|else|for|while|switch|case)\b', contenido)
     llamadas_funciones = re.findall(r'\b(\w+)\s*\(', contenido)
     tipos_datos = re.findall(r'\b(int|float|double|char|bool|string|auto)\b', contenido)
+    operadores = re.findall(r'[+\-*/%=<>!&|^~]', contenido)
     
     return {
         'variables': variables,
@@ -22,7 +24,8 @@ def extraer_elementos(contenido):
         'comentarios': [c.strip() for c in comentarios],
         'estructuras_control': estructuras_control,
         'llamadas_funciones': llamadas_funciones,
-        'tipos_datos': tipos_datos
+        'tipos_datos': tipos_datos,
+        'operadores': operadores
     }
 
 def calcular_hash(texto):
@@ -40,9 +43,14 @@ def calcular_metricas_codigo(contenido):
 def analizar_complejidad(contenido):
     return len(re.findall(r'\b(if|for|while|switch)\b', contenido))
 
+def extraer_secuencias(contenido, longitud=3):
+    tokens = re.findall(r'\b\w+\b|[+\-*/%=<>!&|^~;{}()\[\]]', contenido)
+    return [' '.join(tokens[i:i+longitud]) for i in range(len(tokens) - longitud + 1)]
+
 def analizar_archivos(ruta_src):
     resultados = {}
     todos_elementos = []
+    todos_secuencias = []
     
     for raiz, _, ficheros in os.walk(ruta_src):
         for fichero in ficheros:
@@ -54,6 +62,9 @@ def analizar_archivos(ruta_src):
                 elementos = extraer_elementos(contenido)
                 todos_elementos.append(' '.join(elementos['variables'] + elementos['funciones'] +
                                                 elementos['clases'] + elementos['comentarios']))
+                
+                secuencias = extraer_secuencias(contenido)
+                todos_secuencias.extend(secuencias)
                 
                 metricas = calcular_metricas_codigo(contenido)
                 complejidad = analizar_complejidad(contenido)
@@ -70,8 +81,10 @@ def analizar_archivos(ruta_src):
                         'num_comentarios': len(elementos['comentarios']),
                         'freq_estructuras_control': dict(Counter(elementos['estructuras_control'])),
                         'freq_llamadas_funciones': dict(Counter(elementos['llamadas_funciones'])),
-                        'freq_tipos_datos': dict(Counter(elementos['tipos_datos']))
-                    }
+                        'freq_tipos_datos': dict(Counter(elementos['tipos_datos'])),
+                        'freq_operadores': dict(Counter(elementos['operadores']))
+                    },
+                    'secuencias_comunes': Counter(secuencias).most_common(10)
                 }
     
     vectorizer = TfidfVectorizer()
@@ -80,13 +93,13 @@ def analizar_archivos(ruta_src):
     for i, (fichero, datos) in enumerate(resultados.items()):
         datos['vector_tfidf'] = tfidf_matrix[i].toarray()[0].tolist()
     
-    # Añadir estadísticas globales del proyecto
     estadisticas_globales = {
         'total_archivos': len(resultados),
         'total_lineas': sum(datos['metricas']['total_lineas'] for datos in resultados.values()),
         'total_funciones': sum(datos['estadisticas']['num_funciones'] for datos in resultados.values()),
         'total_clases': sum(datos['estadisticas']['num_clases'] for datos in resultados.values()),
-        'complejidad_promedio': sum(datos['complejidad'] for datos in resultados.values()) / len(resultados) if resultados else 0
+        'complejidad_promedio': sum(datos['complejidad'] for datos in resultados.values()) / len(resultados) if resultados else 0,
+        'secuencias_mas_comunes': Counter(todos_secuencias).most_common(20)
     }
     
     return {
@@ -104,7 +117,8 @@ def main():
     ruta_output = os.path.join(ruta_proyecto, 'output')
     os.makedirs(ruta_output, exist_ok=True)
 
-    ruta_resultados = os.path.join(ruta_output, 'analisis_detallado_codigo.json')
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    ruta_resultados = os.path.join(ruta_output, f'caracteristicas_a_comparar_{timestamp}.json')
 
     resultados = analizar_archivos(ruta_src)
     guardar_resultados(resultados, ruta_resultados)

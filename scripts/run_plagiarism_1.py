@@ -3,9 +3,9 @@ import re
 from datetime import datetime
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 from transformers import AutoTokenizer, AutoModel
 import torch
-import json
 import nltk
 from nltk.corpus import wordnet
 import spacy
@@ -76,6 +76,25 @@ def analizar_significado_variable(nombre):
     else:
         return "Significativo"
 
+def detectar_anomalias(contenido):
+    anomalias = []
+    # Detectar nombres de variables o funciones inusuales
+    nombres_inusuales = re.findall(r'\b[a-z]+_[0-9]+\b', contenido)
+    if nombres_inusuales:
+        anomalias.append(f"Nombres inusuales detectados: {', '.join(nombres_inusuales)}")
+    
+    # Detectar comentarios sospechosos
+    comentarios_sospechosos = re.findall(r'//.*TODO.*|//.*FIXME.*|//.*HACK.*', contenido)
+    if comentarios_sospechosos:
+        anomalias.append(f"Comentarios sospechosos detectados: {len(comentarios_sospechosos)}")
+    
+    # Detectar uso excesivo de goto
+    gotos = re.findall(r'\bgoto\b', contenido)
+    if len(gotos) > 2:
+        anomalias.append(f"Uso excesivo de 'goto': {len(gotos)} veces")
+    
+    return anomalias
+
 def analizar_archivos(ruta_src):
     resultados = {}
     todos_contenidos = []
@@ -90,6 +109,7 @@ def analizar_archivos(ruta_src):
                 caracteristicas = extraer_caracteristicas(contenido)
                 codigo_repetido = detectar_codigo_repetido(contenido)
                 embedding = obtener_embeddings(contenido)
+                anomalias = detectar_anomalias(contenido)
                 
                 analisis_variables = {var: {
                     'significado': analizar_significado_variable(var),
@@ -100,24 +120,42 @@ def analizar_archivos(ruta_src):
                     'ruta': ruta_completa,
                     'caracteristicas': caracteristicas,
                     'codigo_repetido': codigo_repetido,
-                    'embedding': embedding.tolist(),
-                    'analisis_variables': analisis_variables
+                    'embedding': embedding,
+                    'analisis_variables': analisis_variables,
+                    'anomalias': anomalias
                 }
                 
                 todos_contenidos.append(contenido)
     
-    # TF-IDF
+    # TF-IDF y similitud coseno
     vectorizer = TfidfVectorizer(stop_words='english', max_features=1000)
     tfidf_matrix = vectorizer.fit_transform(todos_contenidos)
+    similitud_matrix = cosine_similarity(tfidf_matrix)
     
     for i, (fichero, datos) in enumerate(resultados.items()):
-        datos['tfidf'] = tfidf_matrix[i].toarray().tolist()
+        datos['similitudes'] = {
+            otro_fichero: similitud
+            for j, (otro_fichero, similitud) in enumerate(zip(resultados.keys(), similitud_matrix[i]))
+            if i != j and similitud > 0.7  # Solo mostramos similitudes altas
+        }
     
     return resultados
 
 def generar_reporte(resultados, ruta_salida):
     with open(ruta_salida, 'w', encoding='utf-8') as f:
-        f.write("# Reporte de Análisis de Código\n\n")
+        f.write("# Reporte de Análisis de Código y Detección de Posible Plagio\n\n")
+        f.write(f"Fecha de análisis: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+        
+        # Estadísticas generales
+        total_archivos = len(resultados)
+        total_codigo_repetido = sum(len(datos['codigo_repetido']) for datos in resultados.values())
+        total_anomalias = sum(len(datos['anomalias']) for datos in resultados.values())
+        
+        f.write("## Estadísticas Generales\n\n")
+        f.write(f"- Total de archivos analizados: {total_archivos}\n")
+        f.write(f"- Total de bloques de código repetido detectados: {total_codigo_repetido}\n")
+        f.write(f"- Total de anomalías detectadas: {total_anomalias}\n\n")
+        
         for archivo, datos in resultados.items():
             f.write(f"## Archivo: {archivo}\n\n")
             f.write(f"Ruta: {datos['ruta']}\n\n")
@@ -125,8 +163,6 @@ def generar_reporte(resultados, ruta_salida):
             f.write("### Análisis de variables:\n")
             for var, analisis in datos['analisis_variables'].items():
                 f.write(f"- {var}: {analisis['significado']}\n")
-                f.write(f"  - Significativo: {'Sí' if analisis['analisis']['significativo'] else 'No'}\n")
-                f.write(f"  - Valor semántico: {analisis['analisis']['valor_semantico']}\n")
             
             f.write("\n### Estructuras de control:\n")
             for estructura in datos['caracteristicas']['estructuras_control']:
@@ -134,7 +170,15 @@ def generar_reporte(resultados, ruta_salida):
             
             f.write("\n### Código repetido:\n")
             for bloque, count in datos['codigo_repetido']:
-                f.write(f"- Bloque repetido {count} veces:\n```\n{bloque}\n```\n")
+                f.write(f"- Bloque repetido {count} veces:\n```\n{bloque[:100]}...\n```\n")
+            
+            f.write("\n### Anomalías detectadas:\n")
+            for anomalia in datos['anomalias']:
+                f.write(f"- {anomalia}\n")
+            
+            f.write("\n### Similitudes con otros archivos:\n")
+            for otro_archivo, similitud in datos['similitudes'].items():
+                f.write(f"- {otro_archivo}: {similitud:.2f}\n")
             
             f.write("\n---\n\n")
 
@@ -147,16 +191,10 @@ def main():
     resultados = analizar_archivos(ruta_src)
     
     # Generar reporte
-    ruta_reporte = os.path.join(ruta_salida, f"reporte_analisis_codigo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md")
+    ruta_reporte = os.path.join(ruta_salida, f"REPORTE_ANALISIS_CODIGO_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md")
     generar_reporte(resultados, ruta_reporte)
-    
-    # Exportar datos completos
-    ruta_datos = os.path.join(ruta_salida, f"datos_analisis_codigo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
-    with open(ruta_datos, 'w', encoding='utf-8') as f:
-        json.dump(resultados, f, ensure_ascii=False, indent=2)
 
     print(f"Análisis completado. Reporte guardado en {ruta_reporte}")
-    print(f"Datos completos guardados en {ruta_datos}")
 
 if __name__ == "__main__":
     main()
