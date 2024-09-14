@@ -7,9 +7,8 @@ def analizar_indentacion(contenido):
     errores = []
     nivel_indentacion_esperado = 0
     total_lineas = 0
-    dentro_bloque = False
 
-    # Patrones para detectar estructuras de control
+    # Patrones para detectar estructuras de control y funciones
     patrones_control = {
         'if': re.compile(r'^\s*if\s*\(.*\)\s*{?\s*$'),
         'else': re.compile(r'^\s*else\s*{?\s*$'),
@@ -20,7 +19,8 @@ def analizar_indentacion(contenido):
         'case': re.compile(r'^\s*case\s+.*:\s*$'),
         'default': re.compile(r'^\s*default\s*:\s*$'),
         'llave_apertura': re.compile(r'^\s*\{\s*$'),
-        'llave_cierre': re.compile(r'^\s*\}\s*$')
+        'llave_cierre': re.compile(r'^\s*\}\s*$'),
+        'funcion': re.compile(r'^\s*(int|void|char|float|double|bool|auto)\s+\w+\s*\(.*\)\s*{?\s*$'),
     }
 
     for numero, linea in enumerate(lineas, 1):
@@ -34,28 +34,8 @@ def analizar_indentacion(contenido):
         espacios_iniciales = len(linea) - len(linea.lstrip())
         nivel_actual = espacios_iniciales // 4  # Asumimos que 4 espacios es una indentación
 
-        # Si hay una llave de apertura en la misma línea de una estructura de control
-        if any(patron.match(linea_stripped) for patron in [patrones_control['if'], patrones_control['for'], patrones_control['while'], patrones_control['do'], patrones_control['switch']]):
-            if '{' in linea_stripped:
-                # La llave está en la misma línea que la estructura de control
-                if nivel_actual != nivel_indentacion_esperado:
-                    errores.append(f"Línea {numero}: Indentación incorrecta. Esperado: {nivel_indentacion_esperado * 4} espacios, Encontrado: {espacios_iniciales} espacios")
-                nivel_indentacion_esperado += 1
-            elif nivel_actual != nivel_indentacion_esperado:
-                errores.append(f"Línea {numero}: Indentación incorrecta en estructura de control. Esperado: {nivel_indentacion_esperado * 4} espacios, Encontrado: {espacios_iniciales} espacios")
-        
-        # Manejar bloques que comienzan con main o funciones
-        if re.match(r'^\s*(int|void|char|float|double|bool)\s+main\s*\(.*\)\s*{?\s*$', linea_stripped):
-            if '{' in linea_stripped:
-                # La llave está en la misma línea que la función main
-                if nivel_actual != nivel_indentacion_esperado:
-                    errores.append(f"Línea {numero}: Indentación incorrecta. Esperado: {nivel_indentacion_esperado * 4} espacios, Encontrado: {espacios_iniciales} espacios")
-                nivel_indentacion_esperado += 1
-            elif nivel_actual != nivel_indentacion_esperado:
-                errores.append(f"Línea {numero}: Indentación incorrecta en función main. Esperado: {nivel_indentacion_esperado * 4} espacios, Encontrado: {espacios_iniciales} espacios")
-        
-        # Verificar bloques comunes de apertura y cierre de llaves
-        elif patrones_control['llave_apertura'].match(linea_stripped):
+        # Verificar si la línea contiene una estructura de control o una función
+        if patrones_control['llave_apertura'].match(linea_stripped):
             if nivel_actual != nivel_indentacion_esperado:
                 errores.append(f"Línea {numero}: Indentación incorrecta. Esperado: {nivel_indentacion_esperado * 4} espacios, Encontrado: {espacios_iniciales} espacios")
             nivel_indentacion_esperado += 1
@@ -63,12 +43,20 @@ def analizar_indentacion(contenido):
             nivel_indentacion_esperado = max(0, nivel_indentacion_esperado - 1)
             if nivel_actual != nivel_indentacion_esperado:
                 errores.append(f"Línea {numero}: Indentación incorrecta. Esperado: {nivel_indentacion_esperado * 4} espacios, Encontrado: {espacios_iniciales} espacios")
-        elif patrones_control['case'].match(linea_stripped) or patrones_control['default'].match(linea_stripped):
+        elif any(patron.match(linea_stripped) for patron in patrones_control.values()):
             if nivel_actual != nivel_indentacion_esperado:
-                errores.append(f"Línea {numero}: Indentación incorrecta en 'case' o 'default'. Esperado: {nivel_indentacion_esperado * 4} espacios, Encontrado: {espacios_iniciales} espacios")
-        elif nivel_actual != nivel_indentacion_esperado:
-            errores.append(f"Línea {numero}: Indentación incorrecta. Esperado: {nivel_indentacion_esperado * 4} espacios, Encontrado: {espacios_iniciales} espacios")
-    
+                errores.append(f"Línea {numero}: Indentación incorrecta. Esperado: {nivel_indentacion_esperado * 4} espacios, Encontrado: {espacios_iniciales} espacios")
+
+        # Si es una función como `main` o cualquier otra función
+        if patrones_control['funcion'].match(linea_stripped):
+            if '{' in linea_stripped:
+                # Llave en la misma línea que la función
+                if nivel_actual != nivel_indentacion_esperado:
+                    errores.append(f"Línea {numero}: Indentación incorrecta. Esperado: {nivel_indentacion_esperado * 4} espacios, Encontrado: {espacios_iniciales} espacios")
+                nivel_indentacion_esperado += 1
+            elif nivel_actual != nivel_indentacion_esperado:
+                errores.append(f"Línea {numero}: Indentación incorrecta en la función. Esperado: {nivel_indentacion_esperado * 4} espacios, Encontrado: {espacios_iniciales} espacios")
+
     return errores, total_lineas
 
 def buscar_carpeta_proyecto_visual_studio(ruta_src):

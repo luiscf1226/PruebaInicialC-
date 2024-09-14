@@ -59,6 +59,20 @@ def buscar_carpeta_proyecto_visual_studio(ruta_src):
                     return ruta_carpeta  # Es la carpeta del proyecto de Visual Studio
     return ruta_src  # Si no se encontró, vuelve a usar 'src'
 
+# Función para analizar el significado de variables o funciones
+def analizar_significado_variable(nombre):
+    """
+    Analiza el significado semántico de un nombre de variable o función.
+    Utiliza spacy para determinar si las palabras en el nombre tienen un significado válido.
+    """
+    doc = nlp(nombre)
+    if len(doc) == 0:
+        return "No significativo"
+    elif len(doc) == 1:
+        return "Potencialmente significativo" if doc[0].pos_ in ['NOUN', 'VERB', 'ADJ'] else "Poco significativo"
+    else:
+        return "Significativo"
+
 # Definición de detectar_anomalias
 def detectar_anomalias(contenido):
     anomalias = []
@@ -185,7 +199,7 @@ def analizar_archivos(ruta_src):
 
                 analisis_variables = {var: {
                     'significado': analizar_significado_variable(var),
-                    'analisis': analizar_nombre_variable(var)
+                    'analisis': analizar_significado_variable(var)
                 } for var in caracteristicas['nombres_var_func']}
                 
                 resultados[fichero] = {

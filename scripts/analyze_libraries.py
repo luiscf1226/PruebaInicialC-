@@ -9,10 +9,14 @@ def analizar_librerias_en_archivo(ruta_archivo):
         with open(ruta_archivo, 'r', encoding='utf-8') as f:
             contenido = f.read()
             for linea in contenido.split('\n'):
+                # Buscamos cualquier tipo de #include
                 if linea.strip().startswith('#include'):
-                    match = re.search(r'#include\s*[<"](.+)[>"]', linea)
+                    # Busca librerías entre comillas "libreria.h" o con <> <libreria>
+                    match = re.search(r'#include\s*[<"](.+?)[>"]', linea)
                     if match:
                         librerias.append(match.group(1))
+                    else:
+                        print(f"⚠️ No se pudo extraer librería de la línea: {linea}")
     except Exception as e:
         print(f"❌ Error al analizar el archivo {ruta_archivo}: {str(e)}")
     return librerias
@@ -25,7 +29,7 @@ def buscar_carpeta_proyecto_visual_studio(ruta_src):
     for carpeta in os.listdir(ruta_src):
         ruta_carpeta = os.path.join(ruta_src, carpeta)
         if os.path.isdir(ruta_carpeta):
-            # Verifica si dentro de esta carpeta hay archivos .cpp o .h, asumiendo que es un proyecto de Visual Studio
+            # Verifica si dentro de esta carpeta hay archivos .cpp o .h
             for archivo in os.listdir(ruta_carpeta):
                 if archivo.endswith(('.cpp', '.h', '.hpp')):
                     return ruta_carpeta  # Es la carpeta del proyecto de Visual Studio
@@ -54,7 +58,12 @@ def analizar_proyecto(ruta_proyecto):
             if archivo.endswith(('.cpp', '.h', '.hpp')):
                 ruta_completa = os.path.join(raiz, archivo)
                 ruta_relativa = os.path.relpath(ruta_completa, ruta_proyecto)
+                print(f"🔍 Analizando {ruta_relativa}...")
                 librerias = analizar_librerias_en_archivo(ruta_completa)
+                
+                if not librerias:
+                    print(f"⚠️ No se encontraron librerías en {ruta_relativa}")
+                
                 reporte["librerias_por_archivo"][ruta_relativa] = librerias
                 reporte["estadisticas_generales"]["total_archivos"] += 1
                 reporte["estadisticas_generales"]["total_librerias_usadas"] += len(librerias)
@@ -62,7 +71,7 @@ def analizar_proyecto(ruta_proyecto):
                 reporte["estadisticas_generales"]["frecuencia_librerias"].update(librerias)
 
                 for libreria in librerias:
-                    if libreria.startswith(('<', 'std')):
+                    if libreria.startswith(('<', 'std')):  # Ajusta esto si hay más reglas
                         reporte["estadisticas_generales"]["librerias_estandar"].add(libreria)
                     else:
                         reporte["estadisticas_generales"]["librerias_personalizadas"].add(libreria)
@@ -104,7 +113,7 @@ def guardar_reporte(reporte, ruta_salida_md):
 
 def obtener_nombre_archivo_reporte():
     ahora = datetime.now()
-    return f"REPORTE_ANALISIS_LIBRERIA_{ahora.strftime('%Y%m%d_%H%M%S')}.MD"
+    return f"REPORTE_ANALISIS_LIBRERIA_{ahora.strftime('%Y%m%d_%H%M%S')}.md"
 
 def main():
     print("🔍 Iniciando análisis de librerías...")
