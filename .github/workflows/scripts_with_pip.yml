@@ -1,4 +1,4 @@
-name: Run Python and C++ Scripts
+name: Run Python and C++ Tests
 
 on:
   push:
@@ -43,14 +43,9 @@ jobs:
         python extract_elements.py
         python analyze_spelling.py
         python run_cppcheck.py
+        python run_cpp_test.py
       env:
         PYTHONWARNINGS: "ignore:clean_up_tokenization_spaces:FutureWarning"
-      shell: bash
-    
-    - name: Compile and run C++ script
-      run: |
-        g++ -std=c++11 src/main.cpp -o main
-        ./main
       shell: bash
     
     - name: Upload output as artifact
