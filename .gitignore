@@ -1,3 +1,7 @@
+# Ignorar las carpetas .vs y x64 dentro de la carpeta src
+src/.vs/
+src/x64/
+
 # Archivos objeto compilados
 *.o
 *.obj
@@ -13,20 +17,11 @@
 *.out
 
 # Archivos de Visual Studio
-.vs/
 *.user
 *.suo
 *.sln
 *.vcxproj
 *.vcxproj.filters
-
-# Directorios de compilación
-[Dd]ebug/
-[Rr]elease/
-x64/
-x86/
-[Bb]in/
-[Oo]bj/
 
 # Archivos temporales
 *.tmp
