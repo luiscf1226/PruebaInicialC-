@@ -27,7 +27,7 @@ int main() {
         std::cout << "Hola, " << nombre << ". Tienes " << edad << " años. Gracias por usar el programa." << std::endl;
     }
 
-    // Paso 5: Seleccionar opción 3 para salir
+    // Paso 5: Salir del programa
     std::cout << "Saliendo del programa. ¡Hasta luego!" << std::endl;
 
     return 0;

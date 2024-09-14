@@ -13,7 +13,7 @@ def analizar_estructura(ruta_proyecto):
         'src/main.cpp': 'Archivo',
         'README.md': 'Archivo',
         '.gitignore': 'Archivo',
-        'scripts/analyze_project.py': 'Archivo'
+        'scripts/analyze_structure.py': 'Archivo'
     }
 
     reporte = {

@@ -4,43 +4,54 @@ from datetime import datetime
 from spellchecker import SpellChecker
 import unicodedata
 
+# Función para extraer las salidas cout
 def extraer_couts(contenido):
     patron_cout = r'cout\s*<<\s*"([^"]*)"(?:\s*<<\s*endl\s*)?;'
     return re.findall(patron_cout, contenido)
 
-def verificar_ortografia(texto, spell):
-    palabras = re.findall(r'\b\w+\b', texto.lower())
-    errores = spell.unknown(palabras)
-    return [f"Posible error en '{palabra}': {spell.correction(palabra)}" for palabra in errores]
-
-def verificar_acentos(texto, spell):
+# Verifica palabras que tienen acentos incorrectos o que deberían llevar acento
+def verificar_acentos_faltantes(texto, spell):
     palabras = re.findall(r'\b\w+\b', texto)
     errores = []
+
     for palabra in palabras:
-        if any(c in 'áéíóúÁÉÍÓÚ' for c in palabra):
-            sin_acentos = ''.join(c for c in unicodedata.normalize('NFD', palabra) if unicodedata.category(c) != 'Mn')
-            if sin_acentos != palabra and sin_acentos in spell:
-                errores.append(f"Posible acento incorrecto en '{palabra}', podría ser '{sin_acentos}'")
+        # Normalizamos la palabra para separar acentos
+        palabra_normalizada = unicodedata.normalize('NFD', palabra)
+        sin_acentos = ''.join(c for c in palabra_normalizada if unicodedata.category(c) != 'Mn')
+
+        # Verificamos si la palabra original es distinta a la normalizada sin acentos
+        if sin_acentos != palabra:
+            # La palabra tiene acentos, verificamos si existe en el diccionario
+            if sin_acentos.lower() not in spell:
+                errores.append(f"Posible acento incorrecto en '{palabra}', sugerencia: '{sin_acentos}'")
+        else:
+            # La palabra no tiene acentos, verificamos si debería tener uno
+            if palabra.lower() not in spell:
+                correccion = spell.correction(palabra.lower())
+                if correccion != palabra.lower():
+                    errores.append(f"Posible acento faltante en '{palabra}', sugerencia: '{correccion}'")
+    
     return errores
 
+# Analiza el archivo .cpp para encontrar posibles errores de acentuación
 def analizar_archivo(ruta_archivo, spell):
     try:
         with open(ruta_archivo, 'r', encoding='utf-8') as file:
             contenido = file.read()
     except Exception as e:
         return [], [f"Error al leer el archivo: {str(e)}"]
-    
+
     salidas = extraer_couts(contenido)
     errores = []
-    
+
     for salida in salidas:
-        errores_ortografia = verificar_ortografia(salida, spell)
-        errores_acentos = verificar_acentos(salida, spell)
-        if errores_ortografia or errores_acentos:
-            errores.append({"texto": salida, "errores": errores_ortografia + errores_acentos})
-    
+        errores_acentos = verificar_acentos_faltantes(salida, spell)
+        if errores_acentos:
+            errores.append({"texto": salida, "errores": errores_acentos})
+
     return salidas, errores
 
+# Analiza todos los archivos .cpp en el directorio src
 def analizar_proyecto(ruta_src, spell):
     reporte = {
         "archivos_analizados": 0,
@@ -63,8 +74,9 @@ def analizar_proyecto(ruta_src, spell):
                     reporte["detalles"][ruta_relativa] = {'salidas': salidas, 'errores': errores}
     return reporte
 
+# Genera el reporte en formato Markdown
 def generar_reporte_md(reporte):
-    md = f"# 📝 Reporte de Análisis de Salidas cout y Revisión Ortográfica\n\n"
+    md = f"# 📝 Reporte de Análisis de Acentos y Ortografía en Salidas cout\n\n"
     md += f"📅 Fecha de generación: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
 
     md += "## 📊 Estadísticas Generales\n\n"
@@ -95,6 +107,7 @@ def generar_reporte_md(reporte):
 
     return md
 
+# Función principal
 def main():
     ruta_proyecto = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     ruta_src = os.path.join(ruta_proyecto, 'src')

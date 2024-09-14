@@ -1,23 +1,23 @@
 {
   "steps": [
     {
-      "output": "Bienvenido al programa. Por favor, seleccione una opción:",
+      "output": "Bienvenido al programa. Por favor, seleccione una opción:\n1. Ingresar datos del usuario\n2. Ver otros datos\n3. Salir\n",
       "description": "Mensaje de bienvenida y opciones del menú"
     },
     {
-      "output": "Ha seleccionado la opción 1. Por favor, ingrese su nombre:",
+      "output": "Ha seleccionado la opción 1. Por favor, ingrese su nombre:\n",
       "description": "Confirmación de selección y solicitud de nombre"
     },
     {
-      "output": "Ahora, ingrese su edad:",
+      "output": "Ahora, ingrese su edad:\n",
       "description": "Solicitud de edad"
     },
     {
-      "output": "Hola, Juan. Tienes 25 años. Gracias por usar el programa.",
+      "output": "Hola, Juan. Tienes 25 años. Gracias por usar el programa.\n",
       "description": "Resumen de la información ingresada"
     },
     {
-      "output": "Saliendo del programa. ¡Hasta luego!",
+      "output": "Saliendo del programa. ¡Hasta luego!\n",
       "description": "Mensaje de despedida"
     }
   ]
