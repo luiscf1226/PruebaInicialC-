@@ -21,6 +21,29 @@ nlp = spacy.load("es_core_news_sm")
 tokenizer = AutoTokenizer.from_pretrained("microsoft/codebert-base")
 model = AutoModel.from_pretrained("microsoft/codebert-base")
 
+# Función para leer archivos con manejo de codificaciones
+def leer_archivo_con_codificacion(ruta_archivo):
+    """
+    Intenta leer el archivo con diferentes codificaciones si UTF-8 falla.
+    """
+    try:
+        with open(ruta_archivo, 'r', encoding='utf-8') as file:
+            return file.read(), None
+    except UnicodeDecodeError:
+        try:
+            # Intentar con 'latin-1'
+            with open(ruta_archivo, 'r', encoding='latin-1') as file:
+                return file.read(), None
+        except UnicodeDecodeError:
+            try:
+                # Intentar con 'ISO-8859-1'
+                with open(ruta_archivo, 'r', encoding='ISO-8859-1') as file:
+                    return file.read(), None
+            except Exception as e:
+                return None, f"Error al leer el archivo con otras codificaciones: {str(e)}"
+    except Exception as e:
+        return None, f"Error general al leer el archivo: {str(e)}"
+
 # Función para buscar la carpeta del proyecto creada por Visual Studio dentro de src
 def buscar_carpeta_proyecto_visual_studio(ruta_src):
     """
@@ -35,6 +58,56 @@ def buscar_carpeta_proyecto_visual_studio(ruta_src):
                 if archivo.endswith(('.cpp', '.h')):
                     return ruta_carpeta  # Es la carpeta del proyecto de Visual Studio
     return ruta_src  # Si no se encontró, vuelve a usar 'src'
+
+# Función para extraer funciones de un archivo
+def extraer_funciones(contenido):
+    """
+    Extrae todas las funciones de un archivo de código.
+    """
+    funciones = re.findall(r'\b\w+\s*\([^)]*\)\s*{(?:[^{}]*|{[^{}]*})*}', contenido)
+    return funciones
+
+# Obtener embeddings para las funciones extraídas
+def obtener_embeddings_para_funciones(funciones):
+    """
+    Genera embeddings para cada función utilizando CodeBERT.
+    """
+    embeddings = []
+    for funcion in funciones:
+        inputs = tokenizer(funcion, return_tensors="pt", truncation=True, padding=True, max_length=512)
+        with torch.no_grad():
+            outputs = model(**inputs)
+        embedding = outputs.last_hidden_state.mean(dim=1).squeeze().numpy()
+        embeddings.append(embedding)
+    return embeddings
+
+# Comparar similitudes entre funciones
+def analizar_similitud_funciones(archivo1, archivo2):
+    """
+    Compara funciones entre dos archivos y muestra las similitudes.
+    """
+    funciones1 = extraer_funciones(archivo1)
+    funciones2 = extraer_funciones(archivo2)
+    
+    embeddings1 = obtener_embeddings_para_funciones(funciones1)
+    embeddings2 = obtener_embeddings_para_funciones(funciones2)
+
+    for i, emb1 in enumerate(embeddings1):
+        for j, emb2 in enumerate(embeddings2):
+            similitud = cosine_similarity([emb1], [emb2])
+            if similitud > 0.7:  # Ajustar el umbral según sea necesario
+                print(f"Función {i+1} del archivo 1 es similar a función {j+1} del archivo 2 con una similitud de {similitud[0][0]:.2f}")
+
+# Comparar si dos bloques de código son parafraseos
+def comparar_parafraseo(codigo1, codigo2):
+    """
+    Compara dos bloques de código para determinar si son parafraseos.
+    """
+    emb1 = obtener_embeddings(codigo1)
+    emb2 = obtener_embeddings(codigo2)
+    
+    similitud = cosine_similarity([emb1], [emb2])
+    return similitud[0][0]
 
 def extraer_caracteristicas(contenido):
     nombres_var_func = re.findall(r'\b(?:int|float|double|char|bool|void)\s+(\w+)', contenido)
@@ -65,51 +138,6 @@ def obtener_embeddings(texto):
         outputs = model(**inputs)
     return outputs.last_hidden_state.mean(dim=1).squeeze().numpy()
 
-def analizar_nombre_variable(nombre):
-    palabras = re.findall(r'[A-Z]?[a-z]+|[A-Z]+(?=[A-Z][a-z]|\d|\W|$)|\d+', nombre)
-    significativo = len(palabras) > 1 or (len(palabras) == 1 and len(palabras[0]) > 2)
-    
-    valor_semantico = 0
-    for palabra in palabras:
-        synsets = wordnet.synsets(palabra.lower())
-        if synsets:
-            valor_semantico += len(synsets)
-    
-    return {
-        'nombre': nombre,
-        'palabras': palabras,
-        'significativo': significativo,
-        'valor_semantico': valor_semantico
-    }
-
-def analizar_significado_variable(nombre):
-    doc = nlp(nombre)
-    if len(doc) == 0:
-        return "No significativo"
-    elif len(doc) == 1:
-        return "Potencialmente significativo" if doc[0].pos_ in ['NOUN', 'VERB', 'ADJ'] else "Poco significativo"
-    else:
-        return "Significativo"
-
-def detectar_anomalias(contenido):
-    anomalias = []
-    # Detectar nombres de variables o funciones inusuales
-    nombres_inusuales = re.findall(r'\b[a-z]+_[0-9]+\b', contenido)
-    if nombres_inusuales:
-        anomalias.append(f"Nombres inusuales detectados: {', '.join(nombres_inusuales)}")
-    
-    # Detectar comentarios sospechosos
-    comentarios_sospechosos = re.findall(r'//.*TODO.*|//.*FIXME.*|//.*HACK.*', contenido)
-    if comentarios_sospechosos:
-        anomalias.append(f"Comentarios sospechosos detectados: {len(comentarios_sospechosos)}")
-    
-    # Detectar uso excesivo de goto
-    gotos = re.findall(r'\bgoto\b', contenido)
-    if len(gotos) > 2:
-        anomalias.append(f"Uso excesivo de 'goto': {len(gotos)} veces")
-    
-    return anomalias
-
 def analizar_archivos(ruta_src):
     resultados = {}
     todos_contenidos = []
@@ -121,14 +149,20 @@ def analizar_archivos(ruta_src):
         for fichero in ficheros:
             if fichero.endswith('.cpp'):
                 ruta_completa = os.path.join(raiz, fichero)
-                with open(ruta_completa, 'r', encoding='utf-8') as f:
-                    contenido = f.read()
+                contenido, error = leer_archivo_con_codificacion(ruta_completa)
                 
+                if error:
+                    print(f"Error procesando el archivo {ruta_completa}: {error}")
+                    continue
+
                 caracteristicas = extraer_caracteristicas(contenido)
                 codigo_repetido = detectar_codigo_repetido(contenido)
                 embedding = obtener_embeddings(contenido)
                 anomalias = detectar_anomalias(contenido)
                 
+                funciones = extraer_funciones(contenido)
+                embeddings_funciones = obtener_embeddings_para_funciones(funciones)
+
                 analisis_variables = {var: {
                     'significado': analizar_significado_variable(var),
                     'analisis': analizar_nombre_variable(var)
@@ -140,7 +174,9 @@ def analizar_archivos(ruta_src):
                     'codigo_repetido': codigo_repetido,
                     'embedding': embedding,
                     'analisis_variables': analisis_variables,
-                    'anomalias': anomalias
+                    'anomalias': anomalias,
+                    'funciones': funciones,
+                    'embeddings_funciones': embeddings_funciones
                 }
                 
                 todos_contenidos.append(contenido)
@@ -178,26 +214,14 @@ def generar_reporte(resultados, ruta_salida):
             f.write(f"## Archivo: {archivo}\n\n")
             f.write(f"Ruta: {datos['ruta']}\n\n")
             
-            f.write("### Análisis de variables:\n")
-            for var, analisis in datos['analisis_variables'].items():
-                f.write(f"- {var}: {analisis['significado']}\n")
-            
-            f.write("\n### Estructuras de control:\n")
-            for estructura in datos['caracteristicas']['estructuras_control']:
-                f.write(f"- {estructura}\n")
-            
-            f.write("\n### Código repetido:\n")
-            for bloque, count in datos['codigo_repetido']:
-                f.write(f"- Bloque repetido {count} veces:\n```\n{bloque[:100]}...\n```\n")
-            
-            f.write("\n### Anomalías detectadas:\n")
-            for anomalia in datos['anomalias']:
-                f.write(f"- {anomalia}\n")
-            
-            f.write("\n### Similitudes con otros archivos:\n")
-            for otro_archivo, similitud in datos['similitudes'].items():
-                f.write(f"- {otro_archivo}: {similitud:.2f}\n")
-            
+            f.write("### Análisis de funciones similares:\n")
+            # Comparar funciones dentro del archivo
+            for i, funcion1 in enumerate(datos['funciones']):
+                for j, funcion2 in enumerate(datos['funciones']):
+                    if i != j:
+                        similitud = comparar_parafraseo(funcion1, funcion2)
+                        f.write(f"- Función {i+1} y función {j+1}: similitud de {similitud:.2f}\n")
+
             f.write("\n---\n\n")
 
 def main():
@@ -216,4 +240,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

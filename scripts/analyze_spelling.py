@@ -4,6 +4,29 @@ from datetime import datetime
 from spellchecker import SpellChecker
 import unicodedata
 
+# Función para leer archivos con manejo de codificaciones
+def leer_archivo_con_codificacion(ruta_archivo):
+    """
+    Intenta leer el archivo con diferentes codificaciones si UTF-8 falla.
+    """
+    try:
+        with open(ruta_archivo, 'r', encoding='utf-8') as file:
+            return file.read(), None
+    except UnicodeDecodeError:
+        try:
+            # Intentar con 'latin-1'
+            with open(ruta_archivo, 'r', encoding='latin-1') as file:
+                return file.read(), None
+        except UnicodeDecodeError:
+            try:
+                # Intentar con 'ISO-8859-1'
+                with open(ruta_archivo, 'r', encoding='ISO-8859-1') as file:
+                    return file.read(), None
+            except Exception as e:
+                return None, f"Error al leer el archivo con otras codificaciones: {str(e)}"
+    except Exception as e:
+        return None, f"Error general al leer el archivo: {str(e)}"
+
 # Función para buscar la carpeta del proyecto creada por Visual Studio dentro de src
 def buscar_carpeta_proyecto_visual_studio(ruta_src):
     """
@@ -50,11 +73,9 @@ def verificar_acentos_faltantes(texto, spell):
 
 # Analiza el archivo .cpp para encontrar posibles errores de acentuación
 def analizar_archivo(ruta_archivo, spell):
-    try:
-        with open(ruta_archivo, 'r', encoding='utf-8') as file:
-            contenido = file.read()
-    except Exception as e:
-        return [], [f"Error al leer el archivo: {str(e)}"]
+    contenido, error = leer_archivo_con_codificacion(ruta_archivo)
+    if error:
+        return [], [error]
 
     salidas = extraer_couts(contenido)
     errores = []

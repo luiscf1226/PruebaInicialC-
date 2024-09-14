@@ -69,11 +69,21 @@ def buscar_carpeta_proyecto_visual_studio(ruta_src):
 
 def analizar_archivo(ruta_archivo):
     try:
+        # Intentamos leer el archivo con 'utf-8'
         with open(ruta_archivo, 'r', encoding='utf-8') as file:
             contenido = file.read()
         return analizar_indentacion(contenido)
+    except UnicodeDecodeError:
+        # Si falla, probamos con 'latin-1'
+        try:
+            with open(ruta_archivo, 'r', encoding='latin-1') as file:
+                contenido = file.read()
+            return analizar_indentacion(contenido)
+        except Exception as e:
+            return [f"Error al leer el archivo con 'latin-1': {str(e)}"], 0
     except Exception as e:
         return [f"Error al leer el archivo: {str(e)}"], 0
+
 
 def analizar_proyecto(ruta_src):
     reporte = {}
