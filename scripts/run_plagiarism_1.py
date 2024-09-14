@@ -59,6 +59,26 @@ def buscar_carpeta_proyecto_visual_studio(ruta_src):
                     return ruta_carpeta  # Es la carpeta del proyecto de Visual Studio
     return ruta_src  # Si no se encontró, vuelve a usar 'src'
 
+# Definición de detectar_anomalias
+def detectar_anomalias(contenido):
+    anomalias = []
+    # Detectar nombres de variables o funciones inusuales
+    nombres_inusuales = re.findall(r'\b[a-z]+_[0-9]+\b', contenido)
+    if nombres_inusuales:
+        anomalias.append(f"Nombres inusuales detectados: {', '.join(nombres_inusuales)}")
+    
+    # Detectar comentarios sospechosos
+    comentarios_sospechosos = re.findall(r'//.*TODO.*|//.*FIXME.*|//.*HACK.*', contenido)
+    if comentarios_sospechosos:
+        anomalias.append(f"Comentarios sospechosos detectados: {len(comentarios_sospechosos)}")
+    
+    # Detectar uso excesivo de goto
+    gotos = re.findall(r'\bgoto\b', contenido)
+    if len(gotos) > 2:
+        anomalias.append(f"Uso excesivo de 'goto': {len(gotos)} veces")
+    
+    return anomalias
+
 # Función para extraer funciones de un archivo
 def extraer_funciones(contenido):
     """

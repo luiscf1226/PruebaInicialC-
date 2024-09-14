@@ -47,6 +47,7 @@ def analizar_estructura(ruta_proyecto):
     archivo_cpp_principal = identificar_archivo_cpp_principal(ruta_src)
     if archivo_cpp_principal:
         estructura_esperada[archivo_cpp_principal] = 'Archivo'
+        reporte["estadisticas"]["total_elementos"] += 1
 
     # Comenzamos a verificar si los elementos existen
     for ruta, tipo in estructura_esperada.items():
@@ -61,8 +62,9 @@ def analizar_estructura(ruta_proyecto):
             reporte["cumplimiento_estructura"][ruta] = False
             reporte["estadisticas"]["elementos_faltantes"] += 1
 
-    # Calcular el porcentaje de cumplimiento
-    reporte["estadisticas"]["porcentaje_cumplimiento"] = (reporte["estadisticas"]["elementos_presentes"] / reporte["estadisticas"]["total_elementos"]) * 100
+    # Calcular el porcentaje de cumplimiento y ajustarlo a 100% máximo
+    total_elementos = max(reporte["estadisticas"]["total_elementos"], 1)  # Evita división por cero
+    reporte["estadisticas"]["porcentaje_cumplimiento"] = min((reporte["estadisticas"]["elementos_presentes"] / total_elementos) * 100, 100)
 
     return reporte
 
