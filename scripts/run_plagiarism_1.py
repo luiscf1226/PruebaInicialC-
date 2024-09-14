@@ -21,6 +21,21 @@ nlp = spacy.load("es_core_news_sm")
 tokenizer = AutoTokenizer.from_pretrained("microsoft/codebert-base")
 model = AutoModel.from_pretrained("microsoft/codebert-base")
 
+# Función para buscar la carpeta del proyecto creada por Visual Studio dentro de src
+def buscar_carpeta_proyecto_visual_studio(ruta_src):
+    """
+    Busca la carpeta del proyecto de Visual Studio dentro de 'src/'.
+    Asume que la carpeta del proyecto contiene archivos .cpp o .h.
+    """
+    for carpeta in os.listdir(ruta_src):
+        ruta_carpeta = os.path.join(ruta_src, carpeta)
+        if os.path.isdir(ruta_carpeta):
+            # Verifica si dentro de esta carpeta hay archivos .cpp o .h
+            for archivo in os.listdir(ruta_carpeta):
+                if archivo.endswith(('.cpp', '.h')):
+                    return ruta_carpeta  # Es la carpeta del proyecto de Visual Studio
+    return ruta_src  # Si no se encontró, vuelve a usar 'src'
+
 def extraer_caracteristicas(contenido):
     nombres_var_func = re.findall(r'\b(?:int|float|double|char|bool|void)\s+(\w+)', contenido)
     nombres_var_func += re.findall(r'\b(\w+)\s*\(', contenido)
@@ -98,8 +113,11 @@ def detectar_anomalias(contenido):
 def analizar_archivos(ruta_src):
     resultados = {}
     todos_contenidos = []
+
+    # Buscar la carpeta del proyecto Visual Studio en src
+    ruta_carpeta_proyecto = buscar_carpeta_proyecto_visual_studio(ruta_src)
     
-    for raiz, _, ficheros in os.walk(ruta_src):
+    for raiz, _, ficheros in os.walk(ruta_carpeta_proyecto):
         for fichero in ficheros:
             if fichero.endswith('.cpp'):
                 ruta_completa = os.path.join(raiz, fichero)
@@ -198,3 +216,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

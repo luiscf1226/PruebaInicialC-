@@ -17,6 +17,20 @@ def analizar_librerias_en_archivo(ruta_archivo):
         print(f"❌ Error al analizar el archivo {ruta_archivo}: {str(e)}")
     return librerias
 
+def buscar_carpeta_proyecto_visual_studio(ruta_src):
+    """
+    Busca la carpeta del proyecto de Visual Studio dentro de 'src/'.
+    Asume que la carpeta del proyecto contiene archivos .cpp y .h.
+    """
+    for carpeta in os.listdir(ruta_src):
+        ruta_carpeta = os.path.join(ruta_src, carpeta)
+        if os.path.isdir(ruta_carpeta):
+            # Verifica si dentro de esta carpeta hay archivos .cpp o .h, asumiendo que es un proyecto de Visual Studio
+            for archivo in os.listdir(ruta_carpeta):
+                if archivo.endswith(('.cpp', '.h', '.hpp')):
+                    return ruta_carpeta  # Es la carpeta del proyecto de Visual Studio
+    return ruta_src  # Si no se encontró, vuelve a usar 'src'
+
 def analizar_proyecto(ruta_proyecto):
     reporte = {
         "fecha_hora": datetime.now().isoformat(),
@@ -31,27 +45,27 @@ def analizar_proyecto(ruta_proyecto):
         }
     }
 
-    for carpeta in ['src', 'test']:
-        ruta_carpeta = os.path.join(ruta_proyecto, carpeta)
-        if not os.path.exists(ruta_carpeta):
-            continue
-        for raiz, _, archivos in os.walk(ruta_carpeta):
-            for archivo in archivos:
-                if archivo.endswith(('.cpp', '.h', '.hpp')):
-                    ruta_completa = os.path.join(raiz, archivo)
-                    ruta_relativa = os.path.relpath(ruta_completa, ruta_proyecto)
-                    librerias = analizar_librerias_en_archivo(ruta_completa)
-                    reporte["librerias_por_archivo"][ruta_relativa] = librerias
-                    reporte["estadisticas_generales"]["total_archivos"] += 1
-                    reporte["estadisticas_generales"]["total_librerias_usadas"] += len(librerias)
-                    reporte["estadisticas_generales"]["librerias_unicas"].update(librerias)
-                    reporte["estadisticas_generales"]["frecuencia_librerias"].update(librerias)
+    # Buscar en 'src' la carpeta que contiene el proyecto de Visual Studio
+    ruta_src = os.path.join(ruta_proyecto, 'src')
+    ruta_carpeta_proyecto = buscar_carpeta_proyecto_visual_studio(ruta_src)
 
-                    for libreria in librerias:
-                        if libreria.startswith(('<', 'std')):
-                            reporte["estadisticas_generales"]["librerias_estandar"].add(libreria)
-                        else:
-                            reporte["estadisticas_generales"]["librerias_personalizadas"].add(libreria)
+    for raiz, _, archivos in os.walk(ruta_carpeta_proyecto):
+        for archivo in archivos:
+            if archivo.endswith(('.cpp', '.h', '.hpp')):
+                ruta_completa = os.path.join(raiz, archivo)
+                ruta_relativa = os.path.relpath(ruta_completa, ruta_proyecto)
+                librerias = analizar_librerias_en_archivo(ruta_completa)
+                reporte["librerias_por_archivo"][ruta_relativa] = librerias
+                reporte["estadisticas_generales"]["total_archivos"] += 1
+                reporte["estadisticas_generales"]["total_librerias_usadas"] += len(librerias)
+                reporte["estadisticas_generales"]["librerias_unicas"].update(librerias)
+                reporte["estadisticas_generales"]["frecuencia_librerias"].update(librerias)
+
+                for libreria in librerias:
+                    if libreria.startswith(('<', 'std')):
+                        reporte["estadisticas_generales"]["librerias_estandar"].add(libreria)
+                    else:
+                        reporte["estadisticas_generales"]["librerias_personalizadas"].add(libreria)
 
     return reporte
 

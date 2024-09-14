@@ -1,6 +1,20 @@
 import os
 from datetime import datetime
 
+def identificar_archivo_cpp_principal(ruta_src):
+    """
+    Identifica la carpeta dentro de 'src/' que contiene el archivo .cpp principal
+    con el mismo nombre de la carpeta (como lo haría Visual Studio).
+    """
+    for carpeta in os.listdir(ruta_src):
+        ruta_carpeta = os.path.join(ruta_src, carpeta)
+        if os.path.isdir(ruta_carpeta):
+            # Buscar el archivo .cpp con el mismo nombre que la carpeta
+            archivo_cpp = os.path.join(ruta_carpeta, f"{carpeta}.cpp")
+            if os.path.isfile(archivo_cpp):
+                return archivo_cpp
+    return None
+
 def analizar_estructura(ruta_proyecto):
     estructura_esperada = {
         'src': 'Carpeta',
@@ -10,12 +24,12 @@ def analizar_estructura(ruta_proyecto):
         'input': 'Carpeta',
         'expected_output': 'Carpeta',
         'output': 'Carpeta',
-        'src/main.cpp': 'Archivo',
         'README.md': 'Archivo',
         '.gitignore': 'Archivo',
         'scripts/analyze_structure.py': 'Archivo'
     }
 
+    # Inicializamos el reporte
     reporte = {
         "fecha_hora": datetime.now().isoformat(),
         "cumplimiento_estructura": {},
@@ -26,6 +40,15 @@ def analizar_estructura(ruta_proyecto):
         }
     }
 
+    # Ruta del proyecto
+    ruta_src = os.path.join(ruta_proyecto, 'src')
+
+    # Buscar archivo principal .cpp dentro de la carpeta src
+    archivo_cpp_principal = identificar_archivo_cpp_principal(ruta_src)
+    if archivo_cpp_principal:
+        estructura_esperada[archivo_cpp_principal] = 'Archivo'
+
+    # Comenzamos a verificar si los elementos existen
     for ruta, tipo in estructura_esperada.items():
         ruta_completa = os.path.join(ruta_proyecto, ruta)
         if tipo == 'Carpeta' and os.path.isdir(ruta_completa):
@@ -38,6 +61,7 @@ def analizar_estructura(ruta_proyecto):
             reporte["cumplimiento_estructura"][ruta] = False
             reporte["estadisticas"]["elementos_faltantes"] += 1
 
+    # Calcular el porcentaje de cumplimiento
     reporte["estadisticas"]["porcentaje_cumplimiento"] = (reporte["estadisticas"]["elementos_presentes"] / reporte["estadisticas"]["total_elementos"]) * 100
 
     return reporte

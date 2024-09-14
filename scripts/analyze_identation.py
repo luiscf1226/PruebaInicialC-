@@ -8,30 +8,64 @@ def analizar_indentacion(contenido):
     nivel_indentacion_esperado = 0
     total_lineas = 0
     
+    # Patrones para detectar estructuras de control
+    patrones_control = {
+        'if': re.compile(r'^\s*if\s*\(.*\)\s*$'),
+        'else': re.compile(r'^\s*else\s*'),
+        'for': re.compile(r'^\s*for\s*\(.*\)\s*$'),
+        'while': re.compile(r'^\s*while\s*\(.*\)\s*$'),
+        'do': re.compile(r'^\s*do\s*$'),
+        'switch': re.compile(r'^\s*switch\s*\(.*\)\s*$'),
+        'case': re.compile(r'^\s*case\s+.*:\s*$'),
+        'default': re.compile(r'^\s*default\s*:\s*$'),
+        'llave_apertura': re.compile(r'^\s*\{\s*$'),
+        'llave_cierre': re.compile(r'^\s*\}\s*$')
+    }
+
     for numero, linea in enumerate(lineas, 1):
         linea_stripped = linea.strip()
         if not linea_stripped:  # Ignorar líneas vacías
             continue
-        
+
         total_lineas += 1
         
         # Contar espacios al inicio de la línea
         espacios_iniciales = len(linea) - len(linea.lstrip())
         nivel_actual = espacios_iniciales // 4  # Asumimos que 4 espacios es una indentación
-        
-        # Ajustar el nivel de indentación esperado
-        if linea_stripped.endswith('{'):
+
+        # Verificar estructuras de control
+        if patrones_control['llave_apertura'].match(linea_stripped):
             if nivel_actual != nivel_indentacion_esperado:
                 errores.append(f"Línea {numero}: Indentación incorrecta. Esperado: {nivel_indentacion_esperado * 4} espacios, Encontrado: {espacios_iniciales} espacios")
             nivel_indentacion_esperado += 1
-        elif linea_stripped.startswith('}'):
+        elif patrones_control['llave_cierre'].match(linea_stripped):
             nivel_indentacion_esperado = max(0, nivel_indentacion_esperado - 1)
             if nivel_actual != nivel_indentacion_esperado:
                 errores.append(f"Línea {numero}: Indentación incorrecta. Esperado: {nivel_indentacion_esperado * 4} espacios, Encontrado: {espacios_iniciales} espacios")
+        elif patrones_control['case'].match(linea_stripped) or patrones_control['default'].match(linea_stripped):
+            if nivel_actual != nivel_indentacion_esperado:
+                errores.append(f"Línea {numero}: Indentación incorrecta en 'case' o 'default'. Esperado: {nivel_indentacion_esperado * 4} espacios, Encontrado: {espacios_iniciales} espacios")
+        elif any(patron.match(linea_stripped) for patron in [patrones_control['if'], patrones_control['for'], patrones_control['while'], patrones_control['do'], patrones_control['switch']]):
+            if nivel_actual != nivel_indentacion_esperado:
+                errores.append(f"Línea {numero}: Indentación incorrecta en estructura de control. Esperado: {nivel_indentacion_esperado * 4} espacios, Encontrado: {espacios_iniciales} espacios")
         elif nivel_actual != nivel_indentacion_esperado:
             errores.append(f"Línea {numero}: Indentación incorrecta. Esperado: {nivel_indentacion_esperado * 4} espacios, Encontrado: {espacios_iniciales} espacios")
     
     return errores, total_lineas
+
+def buscar_carpeta_proyecto_visual_studio(ruta_src):
+    """
+    Busca la carpeta del proyecto de Visual Studio dentro de 'src/'.
+    Asume que la carpeta del proyecto contiene archivos .cpp y .h.
+    """
+    for carpeta in os.listdir(ruta_src):
+        ruta_carpeta = os.path.join(ruta_src, carpeta)
+        if os.path.isdir(ruta_carpeta):
+            # Verifica si dentro de esta carpeta hay archivos .cpp o .h, asumiendo que es un proyecto de Visual Studio
+            for archivo in os.listdir(ruta_carpeta):
+                if archivo.endswith(('.cpp', '.h', '.hpp')):
+                    return ruta_carpeta  # Es la carpeta del proyecto de Visual Studio
+    return ruta_src  # Si no se encontró, vuelve a usar 'src'
 
 def analizar_archivo(ruta_archivo):
     try:
@@ -43,7 +77,11 @@ def analizar_archivo(ruta_archivo):
 
 def analizar_proyecto(ruta_src):
     reporte = {}
-    for raiz, dirs, archivos in os.walk(ruta_src):
+    
+    # Buscar la carpeta del proyecto Visual Studio en src
+    ruta_carpeta_proyecto = buscar_carpeta_proyecto_visual_studio(ruta_src)
+    
+    for raiz, dirs, archivos in os.walk(ruta_carpeta_proyecto):
         for archivo in archivos:
             if archivo.endswith('.cpp'):
                 ruta_completa = os.path.join(raiz, archivo)

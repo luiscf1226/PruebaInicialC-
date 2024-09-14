@@ -1,36 +1,47 @@
-# Ignorar las carpetas .vs y x64 dentro de la carpeta src
-src/.vs/
-src/x64/
+# Ignorar las carpetas .vs y x64 dentro de src
+src/**/.vs/
+src/**/x64/
 
-# Archivos objeto compilados
+# Archivos binarios y objetos compilados
 *.o
 *.obj
-
-# Archivos de librería compilados
-*.lib
-*.a
+*.exe
 *.dll
 *.so
-
-# Ejecutables
-*.exe
+*.dylib
+*.lib
+*.a
 *.out
+*.class
+
+# Archivos temporales
+*.tmp
+*.log
+*.temp
+*.pid
+*.seed
+*.pid.lock
+
+# Ignorar directorios de build
+build/
+dist/
+[Bb]in/
+[Oo]bj/
 
 # Archivos de Visual Studio
 *.user
 *.suo
 *.sln
+*.VC.db
+*.VC.VC.opendb
 *.vcxproj
 *.vcxproj.filters
 
-# Archivos temporales
-*.tmp
-*.temp
-
-# Otros archivos y carpetas que generalmente no se quieren en el control de versiones
-*.log
+# Ignorar archivos de configuración del entorno de desarrollo
 .vscode/
+.idea/
 
-# Ignorar todos los archivos en la carpeta output excepto .gitkeep
-output/*
-!output/.gitkeep
+# Ignorar archivos generados por el sistema operativo
+.DS_Store
+Thumbs.db
+

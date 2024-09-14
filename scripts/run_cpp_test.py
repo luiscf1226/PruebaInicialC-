@@ -5,6 +5,21 @@ import sys
 from datetime import datetime
 import glob
 
+# Función para buscar la carpeta del proyecto creada por Visual Studio dentro de src
+def buscar_carpeta_proyecto_visual_studio(ruta_src):
+    """
+    Busca la carpeta del proyecto de Visual Studio dentro de 'src/'.
+    Asume que la carpeta del proyecto contiene archivos .cpp o .h.
+    """
+    for carpeta in os.listdir(ruta_src):
+        ruta_carpeta = os.path.join(ruta_src, carpeta)
+        if os.path.isdir(ruta_carpeta):
+            # Verifica si dentro de esta carpeta hay archivos .cpp o .h
+            for archivo in os.listdir(ruta_carpeta):
+                if archivo.endswith(('.cpp', '.h')):
+                    return ruta_carpeta  # Es la carpeta del proyecto de Visual Studio
+    return ruta_src  # Si no se encontró, vuelve a usar 'src'
+
 def load_json(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
         return json.load(f)
@@ -81,7 +96,10 @@ def find_cpp_files(src_dir):
     return cpp_files
 
 def compile_cpp_program(src_dir, output_dir):
-    cpp_files = find_cpp_files(src_dir)
+    # Buscar la carpeta del proyecto Visual Studio en src
+    ruta_carpeta_proyecto = buscar_carpeta_proyecto_visual_studio(src_dir)
+    
+    cpp_files = find_cpp_files(ruta_carpeta_proyecto)
     if not cpp_files:
         return None, "No se encontraron archivos C++ en el directorio src."
     

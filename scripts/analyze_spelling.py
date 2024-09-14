@@ -4,6 +4,21 @@ from datetime import datetime
 from spellchecker import SpellChecker
 import unicodedata
 
+# Función para buscar la carpeta del proyecto creada por Visual Studio dentro de src
+def buscar_carpeta_proyecto_visual_studio(ruta_src):
+    """
+    Busca la carpeta del proyecto de Visual Studio dentro de 'src/'.
+    Asume que la carpeta del proyecto contiene archivos .cpp.
+    """
+    for carpeta in os.listdir(ruta_src):
+        ruta_carpeta = os.path.join(ruta_src, carpeta)
+        if os.path.isdir(ruta_carpeta):
+            # Verifica si dentro de esta carpeta hay archivos .cpp, asumiendo que es un proyecto de Visual Studio
+            for archivo in os.listdir(ruta_carpeta):
+                if archivo.endswith('.cpp'):
+                    return ruta_carpeta  # Es la carpeta del proyecto de Visual Studio
+    return ruta_src  # Si no se encontró una subcarpeta, vuelve a usar 'src'
+
 # Función para extraer las salidas cout
 def extraer_couts(contenido):
     patron_cout = r'cout\s*<<\s*"([^"]*)"(?:\s*<<\s*endl\s*)?;'
@@ -51,7 +66,7 @@ def analizar_archivo(ruta_archivo, spell):
 
     return salidas, errores
 
-# Analiza todos los archivos .cpp en el directorio src
+# Analiza todos los archivos .cpp en el directorio del proyecto
 def analizar_proyecto(ruta_src, spell):
     reporte = {
         "archivos_analizados": 0,
@@ -60,7 +75,11 @@ def analizar_proyecto(ruta_src, spell):
         "total_errores": 0,
         "detalles": {}
     }
-    for raiz, dirs, archivos in os.walk(ruta_src):
+
+    # Buscar la carpeta del proyecto Visual Studio en src
+    ruta_carpeta_proyecto = buscar_carpeta_proyecto_visual_studio(ruta_src)
+
+    for raiz, dirs, archivos in os.walk(ruta_carpeta_proyecto):
         for archivo in archivos:
             if archivo.endswith('.cpp'):
                 reporte["archivos_analizados"] += 1

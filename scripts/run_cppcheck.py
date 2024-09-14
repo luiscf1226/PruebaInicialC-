@@ -7,9 +7,26 @@ from collections import defaultdict
 SRC_DIR = "../src"
 OUTPUT_DIR = "../output"
 
+# Función para buscar la carpeta del proyecto creada por Visual Studio dentro de src
+def buscar_carpeta_proyecto_visual_studio(ruta_src):
+    """
+    Busca la carpeta del proyecto de Visual Studio dentro de 'src/'.
+    Asume que la carpeta del proyecto contiene archivos .cpp o .h.
+    """
+    for carpeta in os.listdir(ruta_src):
+        ruta_carpeta = os.path.join(ruta_src, carpeta)
+        if os.path.isdir(ruta_carpeta):
+            # Verifica si dentro de esta carpeta hay archivos .cpp o .h
+            for archivo in os.listdir(ruta_carpeta):
+                if archivo.endswith(('.cpp', '.h')):
+                    return ruta_carpeta  # Es la carpeta del proyecto de Visual Studio
+    return ruta_src  # Si no se encontró, vuelve a usar 'src'
+
+# Función para contar líneas de código, comentarios y líneas en blanco
 def count_lines_of_code():
     loc = defaultdict(int)
-    for root, _, files in os.walk(SRC_DIR):
+    ruta_carpeta_proyecto = buscar_carpeta_proyecto_visual_studio(SRC_DIR)
+    for root, _, files in os.walk(ruta_carpeta_proyecto):
         for file in files:
             if file.endswith(('.cpp', '.h')):
                 with open(os.path.join(root, file), 'r') as f:
@@ -20,9 +37,11 @@ def count_lines_of_code():
                     loc['blank'] += sum(1 for line in content.splitlines() if not line.strip())
     return loc
 
+# Función para analizar la complejidad ciclomática y cognitiva
 def analyze_complexity():
     complexity = defaultdict(int)
-    for root, _, files in os.walk(SRC_DIR):
+    ruta_carpeta_proyecto = buscar_carpeta_proyecto_visual_studio(SRC_DIR)
+    for root, _, files in os.walk(ruta_carpeta_proyecto):
         for file in files:
             if file.endswith('.cpp'):
                 with open(os.path.join(root, file), 'r') as f:
@@ -31,9 +50,11 @@ def analyze_complexity():
                     complexity['cognitive'] += content.count('if') + content.count('for') + content.count('while') + content.count('switch')
     return complexity
 
+# Función para contar funciones en el código
 def count_functions():
     function_count = 0
-    for root, _, files in os.walk(SRC_DIR):
+    ruta_carpeta_proyecto = buscar_carpeta_proyecto_visual_studio(SRC_DIR)
+    for root, _, files in os.walk(ruta_carpeta_proyecto):
         for file in files:
             if file.endswith(('.cpp', '.h')):
                 with open(os.path.join(root, file), 'r') as f:
@@ -41,11 +62,13 @@ def count_functions():
                     function_count += len(re.findall(r'\b\w+\s+\w+\s*\([^)]*\)\s*{', content))
     return function_count
 
+# Función para analizar duplicaciones de código
 def analyze_duplications():
     duplications = 0
     all_code_blocks = []
+    ruta_carpeta_proyecto = buscar_carpeta_proyecto_visual_studio(SRC_DIR)
     
-    for root, _, files in os.walk(SRC_DIR):
+    for root, _, files in os.walk(ruta_carpeta_proyecto):
         for file in files:
             if file.endswith(('.cpp', '.h')):
                 with open(os.path.join(root, file), 'r') as f:
@@ -60,6 +83,7 @@ def analyze_duplications():
     
     return duplications
 
+# Función para ejecutar cppcheck y obtener errores y advertencias
 def run_cppcheck():
     try:
         result = subprocess.run(['cppcheck', '--enable=all', '--inconclusive', '--xml', SRC_DIR],
@@ -73,6 +97,7 @@ def run_cppcheck():
         print("Cppcheck no está instalado o no se encuentra en el PATH del sistema.")
         return {'errors': "N/A", 'warnings': "N/A"}
 
+# Función para generar el reporte en formato Markdown
 def generate_report(loc, complexity, function_count, duplications, cppcheck_results):
     report = f"# 📊 Reporte de Análisis de Métricas - Proyecto C++\n\n"
     report += f"📅 Fecha de análisis: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
@@ -107,6 +132,7 @@ def generate_report(loc, complexity, function_count, duplications, cppcheck_resu
 
     return report
 
+# Función para guardar el reporte generado
 def save_report(content):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     filename = f"REPORTE_ANALISIS_METRICAS_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
@@ -124,3 +150,4 @@ if __name__ == "__main__":
     
     report_content = generate_report(loc, complexity, function_count, duplications, cppcheck_results)
     save_report(report_content)
+
