@@ -111,7 +111,26 @@ def guardar_resultados(resultados, ruta_salida):
     with open(ruta_salida, 'w', encoding='utf-8') as f:
         json.dump(resultados, f, indent=2, ensure_ascii=False)
 
+def generar_reporte_md(resultados):
+    estadisticas = resultados['estadisticas_globales']
+    md = f"# 📊 Reporte de Análisis de Código\n\n"
+    md += f"📅 Fecha de generación: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+
+    md += "## 📈 Estadísticas Globales\n\n"
+    md += f"- 📁 Total de archivos analizados: **{estadisticas['total_archivos']}**\n"
+    md += f"- 📝 Total de líneas de código: **{estadisticas['total_lineas']}**\n"
+    md += f"- 🔧 Total de funciones: **{estadisticas['total_funciones']}**\n"
+    md += f"- 🏗️ Total de clases: **{estadisticas['total_clases']}**\n"
+    md += f"- 🔄 Complejidad promedio: **{estadisticas['complejidad_promedio']:.2f}**\n\n"
+
+    md += "### 🔁 Secuencias más comunes\n\n"
+    for seq, count in estadisticas['secuencias_mas_comunes'][:5]:
+        md += f"- `{seq}`: {count} veces\n"
+
+    return md
+
 def main():
+    print("🔍 Iniciando análisis de código...")
     ruta_proyecto = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     ruta_src = os.path.join(ruta_proyecto, 'src')
     ruta_output = os.path.join(ruta_proyecto, 'output')
@@ -119,11 +138,22 @@ def main():
 
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     ruta_resultados = os.path.join(ruta_output, f'caracteristicas_a_comparar_{timestamp}.json')
+    ruta_reporte = os.path.join(ruta_output, f'reporte_analisis_{timestamp}.md')
 
+    print("📊 Analizando archivos...")
     resultados = analizar_archivos(ruta_src)
+    
+    print("💾 Guardando resultados detallados...")
     guardar_resultados(resultados, ruta_resultados)
 
-    print(f"Análisis detallado completado. Resultados guardados en {ruta_resultados}")
+    print("📝 Generando reporte resumido...")
+    reporte_md = generar_reporte_md(resultados)
+    with open(ruta_reporte, 'w', encoding='utf-8') as f:
+        f.write(reporte_md)
+
+    print(f"✅ Análisis completado.")
+    print(f"📊 Resultados detallados guardados en: {ruta_resultados}")
+    print(f"📑 Reporte resumido guardado en: {ruta_reporte}")
 
 if __name__ == "__main__":
     main()

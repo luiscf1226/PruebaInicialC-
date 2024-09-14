@@ -43,19 +43,20 @@ def analizar_estructura(ruta_proyecto):
     return reporte
 
 def generar_markdown(reporte):
-    md = f"# Reporte de Análisis de Estructura del Proyecto\n\n"
-    md += f"Fecha y hora del análisis: {reporte['fecha_hora']}\n\n"
+    md = f"# 📊 Reporte de Análisis de Estructura del Proyecto\n\n"
+    md += f"📅 Fecha y hora del análisis: {reporte['fecha_hora']}\n\n"
 
-    md += "## Estadísticas Generales\n\n"
+    md += "## 📈 Estadísticas Generales\n\n"
     stats = reporte['estadisticas']
-    md += f"- Total de elementos esperados: {stats['total_elementos']}\n"
-    md += f"- Elementos presentes: {stats['elementos_presentes']}\n"
-    md += f"- Elementos faltantes: {stats['elementos_faltantes']}\n"
-    md += f"- Porcentaje de cumplimiento: {stats['porcentaje_cumplimiento']:.2f}%\n\n"
+    md += f"- 🔢 Total de elementos esperados: **{stats['total_elementos']}**\n"
+    md += f"- ✅ Elementos presentes: **{stats['elementos_presentes']}**\n"
+    md += f"- ❌ Elementos faltantes: **{stats['elementos_faltantes']}**\n"
+    md += f"- 📊 Porcentaje de cumplimiento: **{stats['porcentaje_cumplimiento']:.2f}%**\n\n"
 
-    md += "## Detalle de Cumplimiento\n\n"
+    md += "## 🔍 Detalle de Cumplimiento\n\n"
     for ruta, cumple in reporte['cumplimiento_estructura'].items():
-        md += f"- {ruta}: {'Presente' if cumple else 'Faltante'}\n"
+        emoji = "✅" if cumple else "❌"
+        md += f"- {emoji} {ruta}: **{'Presente' if cumple else 'Faltante'}**\n"
 
     return md
 
@@ -68,7 +69,8 @@ def obtener_nombre_archivo_reporte():
     ahora = datetime.now()
     return f"REPORTE_ANALISIS_ESTRUCTURA_{ahora.strftime('%Y%m%d_%H%M%S')}.md"
 
-if __name__ == "__main__":
+def main():
+    print("🔍 Iniciando análisis de estructura del proyecto...")
     ruta_proyecto = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     directorio_salida = os.path.join(ruta_proyecto, "output")
     nombre_archivo = obtener_nombre_archivo_reporte()
@@ -78,7 +80,18 @@ if __name__ == "__main__":
         reporte = analizar_estructura(ruta_proyecto)
         contenido_markdown = generar_markdown(reporte)
         guardar_reporte(contenido_markdown, ruta_salida)
-        print(f"Reporte de análisis de estructura generado y guardado en:")
-        print(f"- {ruta_salida}")
+        print("✅ Análisis completado con éxito.")
+        print(f"📄 Reporte generado y guardado en:")
+        print(f"   {ruta_salida}")
+        
+        # Mostrar un resumen en la consola
+        print("\n📊 Resumen del análisis:")
+        print(f"   Total de elementos esperados: {reporte['estadisticas']['total_elementos']}")
+        print(f"   Elementos presentes: {reporte['estadisticas']['elementos_presentes']}")
+        print(f"   Elementos faltantes: {reporte['estadisticas']['elementos_faltantes']}")
+        print(f"   Porcentaje de cumplimiento: {reporte['estadisticas']['porcentaje_cumplimiento']:.2f}%")
     except Exception as e:
-        print(f"Error al generar el reporte: {str(e)}")
+        print(f"❌ Error al generar el reporte: {str(e)}")
+
+if __name__ == "__main__":
+    main()

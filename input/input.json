@@ -9,6 +9,10 @@
       "description": "Ingresar nombre del usuario"
     },
     {
+      "input": "25",
+      "description": "Ingresar edad del usuario"
+    },
+    {
       "input": "3",
       "description": "Seleccionar opción 3 para salir"
     }

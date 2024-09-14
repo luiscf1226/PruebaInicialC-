@@ -1,65 +1,37 @@
 #include <iostream>
-#include <vector>
-#include <algorithm>
 #include <string>
-#include <map>
-#include <cmath>
-#include <fstream>
-
-using namespace std;
-
-// Funcion para calcular el promedio
-double calcularPromedio(const vector<int>& numeros) {
-double suma = 0;
-for (int num : numeros) {
-suma += num;
-}
-return suma / numeros.size();
-}
 
 int main() {
-  cout << "Bienvenido al programa de prueba para los scripts de analisis!" << endl;
-  
-    vector<int> datos = {10, 20, 30, 40, 50};
-    
-        // Calculo del promedio
-        double promedio = calcularPromedio(datos);
-    
-  cout << "El promedio de los datos es: " << promedio << endl;
-  
-      // Prueba de ortografia en español
-  cout << "Esto es una prueba de ortografía con algunos errores intencionales." << endl;
-  cout << "El perro ladra mucho por la noche." << endl;
-  cout << "El gato duerme en el sofa todo el dia." << endl;
-  cout << "La computadora es una herramienta muy util." << endl;
-  
-  // Prueba de identacion incorrecta
-    for (int i = 0; i < 5; i++) {
-  cout << "Numero: " << i << endl;
-      if (i % 2 == 0) {
-    cout << "Es par" << endl;
-  } else {
-          cout << "Es impar" << endl;
-      }
+    std::string nombre;
+    int edad;
+    int opcion;
+
+    std::cout << "Bienvenido al programa. Por favor, seleccione una opción:" << std::endl;
+    std::cout << "1. Ingresar información" << std::endl;
+    std::cout << "2. Ver información" << std::endl;
+    std::cout << "3. Salir" << std::endl;
+
+    std::cin >> opcion;
+
+    switch(opcion) {
+        case 1:
+            std::cout << "Ha seleccionado la opción 1. Por favor, ingrese su nombre:" << std::endl;
+            std::cin >> nombre;
+            
+            std::cout << "Ahora, ingrese su edad:" << std::endl;
+            std::cin >> edad;
+            
+            std::cout << "Hola, " << nombre << ". Tienes " << edad << " años. Gracias por usar el programa." << std::endl;
+            break;
+        case 2:
+            std::cout << "No hay información para mostrar." << std::endl;
+            break;
+        case 3:
+            std::cout << "Saliendo del programa. ¡Hasta luego!" << std::endl;
+            break;
+        default:
+            std::cout << "Opción no válida." << std::endl;
     }
-  
-  // Uso de diferentes tipos de datos y estructuras
-  map<string, int> edades;
-  edades["Juan"] = 25;
-  edades["Maria"] = 30;
-  
-  // Operaciones matematicas
-  double raiz = sqrt(16);
-  int potencia = pow(2, 3);
-  
-  // Manejo de archivos
-  ofstream archivo("prueba.txt");
-  if (archivo.is_open()) {
-    archivo << "Esto es una prueba de escritura en archivo." << endl;
-    archivo.close();
-  }
-  
-  cout << "Fin del programa de prueba. Gracias por utilizarlo!" << endl;
-  
-  return 0;
+
+    return 0;
 }

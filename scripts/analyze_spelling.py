@@ -64,33 +64,33 @@ def analizar_proyecto(ruta_src, spell):
     return reporte
 
 def generar_reporte_md(reporte):
-    md = f"# Reporte de Análisis de Salidas cout y Revisión Ortográfica\n\n"
-    md += f"Fecha de generación: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+    md = f"# 📝 Reporte de Análisis de Salidas cout y Revisión Ortográfica\n\n"
+    md += f"📅 Fecha de generación: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
 
-    md += "## Estadísticas Generales\n\n"
-    md += f"- Archivos analizados: {reporte['archivos_analizados']}\n"
-    md += f"- Total de salidas encontradas: {reporte['total_salidas']}\n"
-    md += f"- Salidas con errores: {reporte['salidas_con_errores']}\n"
-    md += f"- Total de errores detectados: {reporte['total_errores']}\n"
+    md += "## 📊 Estadísticas Generales\n\n"
+    md += f"- 📁 Archivos analizados: **{reporte['archivos_analizados']}**\n"
+    md += f"- 💬 Total de salidas encontradas: **{reporte['total_salidas']}**\n"
+    md += f"- ⚠️ Salidas con errores: **{reporte['salidas_con_errores']}**\n"
+    md += f"- 🚫 Total de errores detectados: **{reporte['total_errores']}**\n"
     if reporte['total_salidas'] > 0:
-        md += f"- Porcentaje de salidas con errores: {(reporte['salidas_con_errores'] / reporte['total_salidas']) * 100:.2f}%\n\n"
+        md += f"- 📊 Porcentaje de salidas con errores: **{(reporte['salidas_con_errores'] / reporte['total_salidas']) * 100:.2f}%**\n\n"
 
-    md += "## Detalles por Archivo\n\n"
+    md += "## 📄 Detalles por Archivo\n\n"
     for archivo, datos in reporte["detalles"].items():
-        md += f"### Archivo: {archivo}\n\n"
+        md += f"### 📎 Archivo: `{archivo}`\n\n"
         
         if datos['salidas']:
-            md += "#### Salidas encontradas:\n\n"
+            md += "#### 💬 Salidas encontradas:\n\n"
             for salida in datos['salidas']:
-                md += f"- `{salida}`\n"
+                md += f"- ```{salida}```\n"
             md += "\n"
         
         if datos['errores']:
-            md += "#### Posibles errores ortográficos y de acentuación:\n\n"
+            md += "#### ⚠️ Posibles errores ortográficos y de acentuación:\n\n"
             for error in datos['errores']:
-                md += f"- Texto: `{error['texto']}`\n"
+                md += f"- Texto: ```{error['texto']}```\n"
                 for e in error['errores']:
-                    md += f"  - {e}\n"
+                    md += f"  - 🔍 {e}\n"
                 md += "\n"
 
     return md

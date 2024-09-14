@@ -57,12 +57,12 @@ def analizar_proyecto(ruta_src):
     return reporte
 
 def generar_reporte_md(reporte):
-    md = f"# Reporte de Análisis de Indentación\n\n"
-    md += f"Fecha de generación: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+    md = f"# 📊 Reporte de Análisis de Indentación\n\n"
+    md += f"📅 Fecha de generación: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
 
-    md += "## Estadísticas Generales\n\n"
+    md += "## 📈 Estadísticas Generales\n\n"
     md += "| Archivo | Líneas Totales | Líneas Correctas | Porcentaje Correcto |\n"
-    md += "|---------|----------------|-------------------|---------------------|\n"
+    md += "|:--------|---------------:|------------------:|--------------------:|\n"
 
     total_lineas_proyecto = 0
     total_lineas_correctas_proyecto = 0
@@ -79,27 +79,28 @@ def generar_reporte_md(reporte):
     porcentaje_correcto_proyecto = (total_lineas_correctas_proyecto / total_lineas_proyecto * 100) if total_lineas_proyecto > 0 else 0
     md += f"\n**Total del Proyecto:** {total_lineas_proyecto} líneas, {total_lineas_correctas_proyecto} correctas, {porcentaje_correcto_proyecto:.2f}% correcto\n\n"
 
-    md += "## Detalles por Archivo\n\n"
+    md += "## 🔍 Detalles por Archivo\n\n"
     for archivo, datos in reporte.items():
-        md += f"### Archivo: {archivo}\n\n"
+        md += f"### 📄 Archivo: {archivo}\n\n"
         
         if datos['errores']:
-            md += "#### Errores de indentación encontrados:\n\n"
+            md += "#### ❌ Errores de indentación encontrados:\n\n"
             for error in datos['errores']:
-                md += f"- {error}\n"
+                md += f"- 🔴 {error}\n"
             md += "\n"
         else:
-            md += "No se encontraron errores de indentación.\n\n"
+            md += "✅ No se encontraron errores de indentación.\n\n"
 
     return md
 
 def main():
+    print("🔍 Iniciando análisis de indentación...")
     ruta_proyecto = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     ruta_src = os.path.join(ruta_proyecto, 'src')
     ruta_salida = os.path.join(ruta_proyecto, 'output')
 
     if not os.path.exists(ruta_src):
-        print(f"Error: No se encontró la carpeta src en {ruta_src}")
+        print(f"❌ Error: No se encontró la carpeta src en {ruta_src}")
         return
 
     reporte = analizar_proyecto(ruta_src)
@@ -111,7 +112,20 @@ def main():
     with open(archivo_reporte, 'w', encoding='utf-8') as f:
         f.write(contenido_reporte)
 
-    print(f"Análisis de indentación completado. Reporte guardado en {archivo_reporte}")
+    print(f"✅ Análisis de indentación completado.")
+    print(f"📄 Reporte guardado en: {archivo_reporte}")
+
+    # Mostrar un resumen en la consola
+    total_archivos = len(reporte)
+    total_lineas = sum(datos['total_lineas'] for datos in reporte.values())
+    total_errores = sum(len(datos['errores']) for datos in reporte.values())
+    porcentaje_correcto = ((total_lineas - total_errores) / total_lineas * 100) if total_lineas > 0 else 0
+
+    print("\n📊 Resumen del análisis:")
+    print(f"   Total de archivos analizados: {total_archivos}")
+    print(f"   Total de líneas analizadas: {total_lineas}")
+    print(f"   Total de errores de indentación: {total_errores}")
+    print(f"   Porcentaje de líneas correctas: {porcentaje_correcto:.2f}%")
 
 if __name__ == "__main__":
     main()

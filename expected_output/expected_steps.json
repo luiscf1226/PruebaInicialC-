@@ -1,7 +1,7 @@
 {
   "steps": [
     {
-      "output": "Bienvenido al programa. Seleccione una opción:",
+      "output": "Bienvenido al programa. Por favor, seleccione una opción:",
       "description": "Mensaje de bienvenida y opciones del menú"
     },
     {
@@ -9,8 +9,12 @@
       "description": "Confirmación de selección y solicitud de nombre"
     },
     {
-      "output": "Hola, Juan. Gracias por usar el programa.",
-      "description": "Saludo personalizado"
+      "output": "Ahora, ingrese su edad:",
+      "description": "Solicitud de edad"
+    },
+    {
+      "output": "Hola, Juan. Tienes 25 años. Gracias por usar el programa.",
+      "description": "Resumen de la información ingresada"
     },
     {
       "output": "Saliendo del programa. ¡Hasta luego!",

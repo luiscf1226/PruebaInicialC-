@@ -14,7 +14,7 @@ def analizar_librerias_en_archivo(ruta_archivo):
                     if match:
                         librerias.append(match.group(1))
     except Exception as e:
-        print(f"Error al analizar el archivo {ruta_archivo}: {str(e)}")
+        print(f"❌ Error al analizar el archivo {ruta_archivo}: {str(e)}")
     return librerias
 
 def analizar_proyecto(ruta_proyecto):
@@ -56,28 +56,28 @@ def analizar_proyecto(ruta_proyecto):
     return reporte
 
 def generar_markdown(reporte):
-    md = f"# Reporte de Análisis de Librerías\n\n"
-    md += f"Fecha y hora del análisis: {reporte['fecha_hora']}\n\n"
+    md = f"# 📚 Reporte de Análisis de Librerías\n\n"
+    md += f"📅 Fecha y hora del análisis: {reporte['fecha_hora']}\n\n"
 
-    md += "## Estadísticas Generales\n\n"
+    md += "## 📊 Estadísticas Generales\n\n"
     stats = reporte['estadisticas_generales']
-    md += f"- Total de archivos analizados: {stats['total_archivos']}\n"
-    md += f"- Total de librerías usadas (incluyendo repeticiones): {stats['total_librerias_usadas']}\n"
-    md += f"- Promedio de librerías por archivo: {stats['total_librerias_usadas'] / stats['total_archivos']:.2f}\n"
-    md += f"- Número de librerías únicas: {len(stats['librerias_unicas'])}\n"
-    md += f"- Número de librerías estándar: {len(stats['librerias_estandar'])}\n"
-    md += f"- Número de librerías personalizadas: {len(stats['librerias_personalizadas'])}\n\n"
+    md += f"- 📁 Total de archivos analizados: **{stats['total_archivos']}**\n"
+    md += f"- 📚 Total de librerías usadas (incluyendo repeticiones): **{stats['total_librerias_usadas']}**\n"
+    md += f"- 📈 Promedio de librerías por archivo: **{stats['total_librerias_usadas'] / stats['total_archivos']:.2f}**\n"
+    md += f"- 🆕 Número de librerías únicas: **{len(stats['librerias_unicas'])}**\n"
+    md += f"- 🏛️ Número de librerías estándar: **{len(stats['librerias_estandar'])}**\n"
+    md += f"- 🛠️ Número de librerías personalizadas: **{len(stats['librerias_personalizadas'])}**\n\n"
 
-    md += "### Librerías más utilizadas\n\n"
+    md += "### 🔝 Librerías más utilizadas\n\n"
     for libreria, frecuencia in sorted(stats['frecuencia_librerias'].items(), key=lambda x: x[1], reverse=True)[:10]:
-        md += f"- {libreria}: {frecuencia} veces\n"
+        md += f"- `{libreria}`: **{frecuencia}** veces\n"
     md += "\n"
 
-    md += "## Librerías utilizadas por archivo\n\n"
+    md += "## 📂 Librerías utilizadas por archivo\n\n"
     for archivo, librerias in reporte['librerias_por_archivo'].items():
-        md += f"### {archivo}\n"
+        md += f"### 📄 {archivo}\n"
         for libreria in librerias:
-            md += f"- {libreria}\n"
+            md += f"- `{libreria}`\n"
         md += "\n"
 
     return md
@@ -92,7 +92,8 @@ def obtener_nombre_archivo_reporte():
     ahora = datetime.now()
     return f"REPORTE_ANALISIS_LIBRERIA_{ahora.strftime('%Y%m%d_%H%M%S')}.MD"
 
-if __name__ == "__main__":
+def main():
+    print("🔍 Iniciando análisis de librerías...")
     ruta_proyecto = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     directorio_salida = os.path.join(ruta_proyecto, "output")
     nombre_archivo = obtener_nombre_archivo_reporte()
@@ -101,7 +102,20 @@ if __name__ == "__main__":
     try:
         reporte = analizar_proyecto(ruta_proyecto)
         guardar_reporte(reporte, ruta_salida_md)
-        print(f"Reporte de análisis de librerías generado y guardado en:")
-        print(f"- {ruta_salida_md}")
+        print("✅ Análisis completado con éxito.")
+        print(f"📄 Reporte generado y guardado en:")
+        print(f"   {ruta_salida_md}")
+        
+        # Mostrar un resumen en la consola
+        stats = reporte['estadisticas_generales']
+        print("\n📊 Resumen del análisis:")
+        print(f"   Total de archivos analizados: {stats['total_archivos']}")
+        print(f"   Total de librerías usadas: {stats['total_librerias_usadas']}")
+        print(f"   Librerías únicas: {len(stats['librerias_unicas'])}")
+        print(f"   Librerías estándar: {len(stats['librerias_estandar'])}")
+        print(f"   Librerías personalizadas: {len(stats['librerias_personalizadas'])}")
     except Exception as e:
-        print(f"Error al generar el reporte: {str(e)}")
+        print(f"❌ Error al generar el reporte: {str(e)}")
+
+if __name__ == "__main__":
+    main()

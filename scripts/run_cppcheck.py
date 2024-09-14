@@ -74,33 +74,36 @@ def run_cppcheck():
         return {'errors': "N/A", 'warnings': "N/A"}
 
 def generate_report(loc, complexity, function_count, duplications, cppcheck_results):
-    report = f"# Reporte de Análisis de Métricas - Proyecto C++\n\n"
-    report += f"Fecha de análisis: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+    report = f"# 📊 Reporte de Análisis de Métricas - Proyecto C++\n\n"
+    report += f"📅 Fecha de análisis: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
 
-    report += "## Métricas de Código\n\n"
-    report += f"- Líneas de código totales: {loc['total']}\n"
-    report += f"- Líneas de código efectivas: {loc['code']}\n"
-    report += f"- Líneas de comentarios: {loc['comment']}\n"
-    report += f"- Líneas en blanco: {loc['blank']}\n"
-    report += f"- Densidad de comentarios: {loc['comment'] / loc['code']:.2%}\n\n"
+    report += "## 📈 Métricas de Código\n\n"
+    report += "### 📝 Líneas de Código\n\n"
+    report += f"- 📏 Líneas totales: **{loc['total']}**\n"
+    report += f"- 💻 Líneas de código efectivas: **{loc['code']}**\n"
+    report += f"- 💬 Líneas de comentarios: **{loc['comment']}**\n"
+    report += f"- ⚪ Líneas en blanco: **{loc['blank']}**\n"
+    report += f"- 📊 Densidad de comentarios: **{loc['comment'] / loc['code']:.2%}**\n\n"
 
-    report += f"- Número de funciones: {function_count}\n"
-    report += f"- Complejidad ciclomática total: {complexity['cyclomatic']}\n"
-    report += f"- Complejidad cognitiva total: {complexity['cognitive']}\n"
-    report += f"- Complejidad ciclomática promedio por función: {complexity['cyclomatic'] / function_count:.2f}\n"
-    report += f"- Complejidad cognitiva promedio por función: {complexity['cognitive'] / function_count:.2f}\n\n"
+    report += "### 🧮 Complejidad y Funciones\n\n"
+    report += f"- 🔢 Número de funciones: **{function_count}**\n"
+    report += f"- 🔄 Complejidad ciclomática total: **{complexity['cyclomatic']}**\n"
+    report += f"- 🧠 Complejidad cognitiva total: **{complexity['cognitive']}**\n"
+    report += f"- 📊 Complejidad ciclomática promedio por función: **{complexity['cyclomatic'] / function_count:.2f}**\n"
+    report += f"- 📊 Complejidad cognitiva promedio por función: **{complexity['cognitive'] / function_count:.2f}**\n\n"
 
-    report += f"- Duplicaciones detectadas: {duplications}\n\n"
+    report += f"### 🔄 Duplicaciones\n\n"
+    report += f"- 🔁 Duplicaciones detectadas: **{duplications}**\n\n"
 
-    report += "## Problemas de Calidad\n\n"
-    report += f"- Errores detectados por Cppcheck: {cppcheck_results['errors']}\n"
-    report += f"- Advertencias detectadas por Cppcheck: {cppcheck_results['warnings']}\n\n"
+    report += "## 🚨 Problemas de Calidad\n\n"
+    report += f"- ❌ Errores detectados por Cppcheck: **{cppcheck_results['errors']}**\n"
+    report += f"- ⚠️ Advertencias detectadas por Cppcheck: **{cppcheck_results['warnings']}**\n\n"
 
-    report += "## Recomendaciones\n\n"
-    report += "1. Revisar y corregir los errores y advertencias reportados por Cppcheck.\n"
-    report += "2. Considerar refactorizar funciones con alta complejidad.\n"
-    report += "3. Revisar y eliminar código duplicado.\n"
-    report += "4. Aumentar la cobertura de comentarios si es necesario.\n"
+    report += "## 💡 Recomendaciones\n\n"
+    report += "1. 🔍 Revisar y corregir los errores y advertencias reportados por Cppcheck.\n"
+    report += "2. 🔧 Considerar refactorizar funciones con alta complejidad.\n"
+    report += "3. 🗑️ Revisar y eliminar código duplicado.\n"
+    report += "4. 📝 Aumentar la cobertura de comentarios si es necesario.\n"
 
     return report
 
