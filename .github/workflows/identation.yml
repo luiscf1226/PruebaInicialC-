@@ -35,7 +35,8 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: analyze_indentation_report
-        path: output/REPORTE_ANALISIS_INDENTACION_*.md
+        path: output/
+        if-no-files-found: warn
     
     - name: Always succeed
       if: always()
