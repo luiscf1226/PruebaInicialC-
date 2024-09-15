@@ -30,15 +30,18 @@ jobs:
     
     - name: Run extract elements script
       run: |
-        cd scripts
-        python extract_elements.py
+        python scripts/extract_elements.py
       shell: bash
     
     - name: Upload output as artifact
       uses: actions/upload-artifact@v3
       with:
         name: extract-elements-output
-        path: output/extract_elements_output/
+        path: output/
+        if-no-files-found: warn
     
     - name: Always succeed
-      run: exit 0
+      if: always()
+      run: |
+        echo "Job completed. Check previous steps for any errors."
+        exit 0
