@@ -32,15 +32,18 @@ jobs:
     
     - name: Run CPPCheck script
       run: |
-        cd scripts
-        python run_cppcheck.py
+        python scripts/run_cppcheck.py
       shell: bash
     
     - name: Upload output as artifact
       uses: actions/upload-artifact@v3
       with:
         name: cppcheck-output
-        path: output/cppcheck_output/
+        path: output/
+        if-no-files-found: warn
     
     - name: Always succeed
-      run: exit 0
+      if: always()
+      run: |
+        echo "Job completed. Check previous steps for any errors."
+        exit 0
