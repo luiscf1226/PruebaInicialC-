@@ -1,4 +1,4 @@
-name: Run analyze_indentation.py
+name: Run analyze_identation.py
 on:
   push:
     paths:
@@ -34,7 +34,7 @@ jobs:
     - name: Upload output as artifact
       uses: actions/upload-artifact@v4
       with:
-        name: analyze_indentation_report
+        name: analyze_identation_report
         path: output/
         if-no-files-found: warn
     
