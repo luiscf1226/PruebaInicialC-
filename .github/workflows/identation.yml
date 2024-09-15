@@ -21,17 +21,23 @@ jobs:
       with:
         python-version: '3.12.5'
     
+    - name: Install cpplint
+      run: |
+        python -m pip install --upgrade pip
+        pip install cpplint
+    
     - name: Run analyze_indentation.py
       run: |
-        cd scripts
-        python analyze_indentation.py
+        mkdir -p src  # Asegura que existe el directorio src
+        touch src/dummy.cpp  # Crea un archivo dummy para evitar errores si src está vacío
+        python scripts/analyze_indentation.py
       shell: bash
     
     - name: Upload output as artifact
       uses: actions/upload-artifact@v3
       with:
-        name: analyze_indentation
-        path: output/analyze_indentation_output/
+        name: analyze_indentation_report
+        path: output/REPORTE_ANALISIS_INDENTACION_*.md
     
     - name: Always succeed
       run: exit 0
