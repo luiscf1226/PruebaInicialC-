@@ -2,11 +2,11 @@ name: Run analyze_indentation.py
 on:
   push:
     paths:
-      - 'scripts/analyze_indentation.py'
+      - 'scripts/analyze_identation.py'
       - 'src/**'
   pull_request:
     paths:
-      - 'scripts/analyze_indentation.py'
+      - 'scripts/analyze_identation.py'
       - 'src/**'
   workflow_dispatch:
 
@@ -28,7 +28,7 @@ jobs:
     
     - name: Run analyze_indentation.py
       run: |
-        python scripts/analyze_indentation.py
+        python scripts/analyze_identation.py
       shell: bash
     
     - name: Upload output as artifact
