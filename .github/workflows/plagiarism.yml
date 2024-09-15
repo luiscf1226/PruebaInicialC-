@@ -32,8 +32,7 @@ jobs:
     
     - name: Run plagiarism script
       run: |
-        cd scripts
-        python run_plagiarism_1.py
+        python scripts/run_plagiarism_1.py
       env:
         PYTHONWARNINGS: "ignore:clean_up_tokenization_spaces:FutureWarning"
       shell: bash
@@ -42,7 +41,11 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: plagiarism-check-output
-        path: output/plagiarism_check_output/
+        path: output/
+        if-no-files-found: warn
     
     - name: Always succeed
-      run: exit 0
+      if: always()
+      run: |
+        echo "Job completed. Check previous steps for any errors."
+        exit 0
