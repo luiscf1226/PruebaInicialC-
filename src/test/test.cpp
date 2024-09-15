@@ -22,7 +22,7 @@ class Group {
 
   void printMembers() const {
     for (const auto& member : members) {
-      std::cout << member.getName() << " (" << member.getAge() << " years old)" << std::endl;
+      std::cout << member.getName() << " (" << member.getAge() << "years old)" << std::endl;
     }
   }
 
