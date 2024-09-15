@@ -5,24 +5,31 @@ import sys
 from datetime import datetime
 import glob
 
-# Función para buscar la carpeta del proyecto creada por Visual Studio dentro de src
+def leer_archivo(ruta_archivo):
+    encodings = ['utf-8', 'latin-1', 'ISO-8859-1']
+    for encoding in encodings:
+        try:
+            with open(ruta_archivo, 'r', encoding=encoding) as file:
+                return file.read()
+        except UnicodeDecodeError:
+            continue
+    print(f"Error: No se pudo leer el archivo {ruta_archivo} con ninguna codificación conocida.")
+    return None
+
 def buscar_carpeta_proyecto_visual_studio(ruta_src):
-    """
-    Busca la carpeta del proyecto de Visual Studio dentro de 'src/'.
-    Asume que la carpeta del proyecto contiene archivos .cpp o .h.
-    """
     for carpeta in os.listdir(ruta_src):
         ruta_carpeta = os.path.join(ruta_src, carpeta)
         if os.path.isdir(ruta_carpeta):
-            # Verifica si dentro de esta carpeta hay archivos .cpp o .h
             for archivo in os.listdir(ruta_carpeta):
                 if archivo.endswith(('.cpp', '.h')):
-                    return ruta_carpeta  # Es la carpeta del proyecto de Visual Studio
-    return ruta_src  # Si no se encontró, vuelve a usar 'src'
+                    return ruta_carpeta
+    return ruta_src
 
 def load_json(file_path):
-    with open(file_path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    content = leer_archivo(file_path)
+    if content is None:
+        raise ValueError(f"No se pudo leer el archivo JSON: {file_path}")
+    return json.loads(content)
 
 def run_cpp_program(program_path, inputs):
     process = subprocess.Popen(
@@ -96,7 +103,6 @@ def find_cpp_files(src_dir):
     return cpp_files
 
 def compile_cpp_program(src_dir, output_dir):
-    # Buscar la carpeta del proyecto Visual Studio en src
     ruta_carpeta_proyecto = buscar_carpeta_proyecto_visual_studio(src_dir)
     
     cpp_files = find_cpp_files(ruta_carpeta_proyecto)

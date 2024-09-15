@@ -3,15 +3,29 @@ import re
 from datetime import datetime
 from collections import Counter
 
+def detectar_encoding(ruta_archivo):
+    encodings = ['utf-8', 'latin-1', 'utf-16']
+    for encoding in encodings:
+        try:
+            with open(ruta_archivo, 'r', encoding=encoding) as file:
+                file.read()
+            return encoding
+        except UnicodeDecodeError:
+            continue
+    return None
+
 def analizar_librerias_en_archivo(ruta_archivo):
     librerias = []
+    encoding = detectar_encoding(ruta_archivo)
+    if not encoding:
+        print(f"❌ No se pudo determinar el encoding del archivo: {ruta_archivo}")
+        return librerias
+
     try:
-        with open(ruta_archivo, 'r', encoding='utf-8') as f:
+        with open(ruta_archivo, 'r', encoding=encoding) as f:
             contenido = f.read()
             for linea in contenido.split('\n'):
-                # Buscamos cualquier tipo de #include
                 if linea.strip().startswith('#include'):
-                    # Busca librerías entre comillas "libreria.h" o con <> <libreria>
                     match = re.search(r'#include\s*[<"](.+?)[>"]', linea)
                     if match:
                         librerias.append(match.group(1))
@@ -21,24 +35,19 @@ def analizar_librerias_en_archivo(ruta_archivo):
         print(f"❌ Error al analizar el archivo {ruta_archivo}: {str(e)}")
     return librerias
 
-def buscar_carpeta_proyecto_visual_studio(ruta_src):
-    """
-    Busca la carpeta del proyecto de Visual Studio dentro de 'src/'.
-    Asume que la carpeta del proyecto contiene archivos .cpp y .h.
-    """
-    for carpeta in os.listdir(ruta_src):
-        ruta_carpeta = os.path.join(ruta_src, carpeta)
-        if os.path.isdir(ruta_carpeta):
-            # Verifica si dentro de esta carpeta hay archivos .cpp o .h
-            for archivo in os.listdir(ruta_carpeta):
-                if archivo.endswith(('.cpp', '.h', '.hpp')):
-                    return ruta_carpeta  # Es la carpeta del proyecto de Visual Studio
-    return ruta_src  # Si no se encontró, vuelve a usar 'src'
+def buscar_carpeta_proyecto(ruta_src):
+    for item in os.listdir(ruta_src):
+        ruta_item = os.path.join(ruta_src, item)
+        if os.path.isdir(ruta_item):
+            if any(archivo.endswith(('.cpp', '.h', '.hpp')) for archivo in os.listdir(ruta_item)):
+                return ruta_item, "Visual Studio"
+    return ruta_src, "Mac"
 
 def analizar_proyecto(ruta_proyecto):
     reporte = {
         "fecha_hora": datetime.now().isoformat(),
         "librerias_por_archivo": {},
+        "archivos_analizados": [],
         "estadisticas_generales": {
             "total_archivos": 0,
             "total_librerias_usadas": 0,
@@ -46,12 +55,13 @@ def analizar_proyecto(ruta_proyecto):
             "librerias_estandar": set(),
             "librerias_personalizadas": set(),
             "frecuencia_librerias": Counter()
-        }
+        },
+        "tipo_proyecto": ""
     }
 
-    # Buscar en 'src' la carpeta que contiene el proyecto de Visual Studio
     ruta_src = os.path.join(ruta_proyecto, 'src')
-    ruta_carpeta_proyecto = buscar_carpeta_proyecto_visual_studio(ruta_src)
+    ruta_carpeta_proyecto, tipo_proyecto = buscar_carpeta_proyecto(ruta_src)
+    reporte["tipo_proyecto"] = tipo_proyecto
 
     for raiz, _, archivos in os.walk(ruta_carpeta_proyecto):
         for archivo in archivos:
@@ -61,9 +71,7 @@ def analizar_proyecto(ruta_proyecto):
                 print(f"🔍 Analizando {ruta_relativa}...")
                 librerias = analizar_librerias_en_archivo(ruta_completa)
                 
-                if not librerias:
-                    print(f"⚠️ No se encontraron librerías en {ruta_relativa}")
-                
+                reporte["archivos_analizados"].append(ruta_relativa)
                 reporte["librerias_por_archivo"][ruta_relativa] = librerias
                 reporte["estadisticas_generales"]["total_archivos"] += 1
                 reporte["estadisticas_generales"]["total_librerias_usadas"] += len(librerias)
@@ -71,7 +79,7 @@ def analizar_proyecto(ruta_proyecto):
                 reporte["estadisticas_generales"]["frecuencia_librerias"].update(librerias)
 
                 for libreria in librerias:
-                    if libreria.startswith(('<', 'std')):  # Ajusta esto si hay más reglas
+                    if libreria.startswith(('<', 'std')):
                         reporte["estadisticas_generales"]["librerias_estandar"].add(libreria)
                     else:
                         reporte["estadisticas_generales"]["librerias_personalizadas"].add(libreria)
@@ -81,6 +89,7 @@ def analizar_proyecto(ruta_proyecto):
 def generar_markdown(reporte):
     md = f"# 📚 Reporte de Análisis de Librerías\n\n"
     md += f"📅 Fecha y hora del análisis: {reporte['fecha_hora']}\n\n"
+    md += f"🖥️ Tipo de proyecto detectado: **{reporte['tipo_proyecto']}**\n\n"
 
     md += "## 📊 Estadísticas Generales\n\n"
     stats = reporte['estadisticas_generales']
@@ -99,9 +108,16 @@ def generar_markdown(reporte):
     md += "## 📂 Librerías utilizadas por archivo\n\n"
     for archivo, librerias in reporte['librerias_por_archivo'].items():
         md += f"### 📄 {archivo}\n"
-        for libreria in librerias:
-            md += f"- `{libreria}`\n"
+        if librerias:
+            for libreria in librerias:
+                md += f"- `{libreria}`\n"
+        else:
+            md += "No se encontraron librerías en este archivo.\n"
         md += "\n"
+
+    md += "## 📁 Archivos analizados\n\n"
+    for archivo in reporte['archivos_analizados']:
+        md += f"- {archivo}\n"
 
     return md
 
@@ -132,11 +148,15 @@ def main():
         # Mostrar un resumen en la consola
         stats = reporte['estadisticas_generales']
         print("\n📊 Resumen del análisis:")
+        print(f"   Tipo de proyecto: {reporte['tipo_proyecto']}")
         print(f"   Total de archivos analizados: {stats['total_archivos']}")
         print(f"   Total de librerías usadas: {stats['total_librerias_usadas']}")
         print(f"   Librerías únicas: {len(stats['librerias_unicas'])}")
         print(f"   Librerías estándar: {len(stats['librerias_estandar'])}")
         print(f"   Librerías personalizadas: {len(stats['librerias_personalizadas'])}")
+        print("\n📁 Archivos analizados:")
+        for archivo in reporte['archivos_analizados']:
+            print(f"   - {archivo}")
     except Exception as e:
         print(f"❌ Error al generar el reporte: {str(e)}")
 

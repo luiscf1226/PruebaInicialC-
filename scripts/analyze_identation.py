@@ -2,104 +2,121 @@ import os
 import re
 from datetime import datetime
 
+def detectar_encoding(ruta_archivo):
+    encodings = ['utf-8', 'latin-1', 'utf-16']
+    for encoding in encodings:
+        try:
+            with open(ruta_archivo, 'r', encoding=encoding) as file:
+                file.read()
+            return encoding
+        except UnicodeDecodeError:
+            continue
+    return None
+
+def remove_strings_and_comments(line):
+    result = ''
+    i = 0
+    in_single_line_comment = False
+    in_multi_line_comment = False
+    in_string = False
+    string_char = ''
+    length = len(line)
+
+    while i < length:
+        c = line[i]
+        if in_single_line_comment:
+            break  # Ignorar el resto de la línea
+        elif in_multi_line_comment:
+            if c == '*' and i + 1 < length and line[i + 1] == '/':
+                in_multi_line_comment = False
+                i += 1  # Saltar '/'
+            # Continuar ignorando caracteres dentro del comentario
+        elif in_string:
+            if c == '\\':
+                i += 1  # Saltar el carácter escapado
+            elif c == string_char:
+                in_string = False
+            # Continuar dentro de la cadena
+        else:
+            if c == '/' and i + 1 < length:
+                next_c = line[i + 1]
+                if next_c == '/':
+                    in_single_line_comment = True
+                    i += 1
+                elif next_c == '*':
+                    in_multi_line_comment = True
+                    i += 1
+                else:
+                    result += c
+            elif c == '"' or c == "'":
+                in_string = True
+                string_char = c
+            else:
+                result += c
+        i += 1
+
+    return result
+
 def analizar_indentacion(contenido):
     lineas = contenido.split('\n')
     errores = []
-    nivel_indentacion_esperado = 0
+    indent_level = 0
+    indent_size = 4
     total_lineas = 0
 
-    # Patrones para detectar estructuras de control y funciones
-    patrones_control = {
-        'if': re.compile(r'^\s*if\s*\(.*\)\s*{?\s*$'),
-        'else': re.compile(r'^\s*else\s*{?\s*$'),
-        'for': re.compile(r'^\s*for\s*\(.*\)\s*{?\s*$'),
-        'while': re.compile(r'^\s*while\s*\(.*\)\s*{?\s*$'),
-        'do': re.compile(r'^\s*do\s*{?\s*$'),
-        'switch': re.compile(r'^\s*switch\s*\(.*\)\s*{?\s*$'),
-        'case': re.compile(r'^\s*case\s+.*:\s*$'),
-        'default': re.compile(r'^\s*default\s*:\s*$'),
-        'llave_apertura': re.compile(r'^\s*\{\s*$'),
-        'llave_cierre': re.compile(r'^\s*\}\s*$'),
-        'funcion': re.compile(r'^\s*(int|void|char|float|double|bool|auto)\s+\w+\s*\(.*\)\s*{?\s*$'),
-    }
-
     for numero, linea in enumerate(lineas, 1):
+        linea_sin_comentarios = remove_strings_and_comments(linea)
         linea_stripped = linea.strip()
-        if not linea_stripped:  # Ignorar líneas vacías
+        if not linea_stripped:
             continue
 
         total_lineas += 1
-        
-        # Contar espacios al inicio de la línea
         espacios_iniciales = len(linea) - len(linea.lstrip())
-        nivel_actual = espacios_iniciales // 4  # Asumimos que 4 espacios es una indentación
 
-        # Verificar si la línea contiene una estructura de control o una función
-        if patrones_control['llave_apertura'].match(linea_stripped):
-            if nivel_actual != nivel_indentacion_esperado:
-                errores.append(f"Línea {numero}: Indentación incorrecta. Esperado: {nivel_indentacion_esperado * 4} espacios, Encontrado: {espacios_iniciales} espacios")
-            nivel_indentacion_esperado += 1
-        elif patrones_control['llave_cierre'].match(linea_stripped):
-            nivel_indentacion_esperado = max(0, nivel_indentacion_esperado - 1)
-            if nivel_actual != nivel_indentacion_esperado:
-                errores.append(f"Línea {numero}: Indentación incorrecta. Esperado: {nivel_indentacion_esperado * 4} espacios, Encontrado: {espacios_iniciales} espacios")
-        elif any(patron.match(linea_stripped) for patron in patrones_control.values()):
-            if nivel_actual != nivel_indentacion_esperado:
-                errores.append(f"Línea {numero}: Indentación incorrecta. Esperado: {nivel_indentacion_esperado * 4} espacios, Encontrado: {espacios_iniciales} espacios")
+        # Antes de procesar la línea, ajustar el nivel de indentación según las llaves de cierre
+        num_close_braces = linea_sin_comentarios.count('}')
+        if num_close_braces > 0:
+            indent_level -= num_close_braces
+            if indent_level < 0:
+                indent_level = 0
 
-        # Si es una función como `main` o cualquier otra función
-        if patrones_control['funcion'].match(linea_stripped):
-            if '{' in linea_stripped:
-                # Llave en la misma línea que la función
-                if nivel_actual != nivel_indentacion_esperado:
-                    errores.append(f"Línea {numero}: Indentación incorrecta. Esperado: {nivel_indentacion_esperado * 4} espacios, Encontrado: {espacios_iniciales} espacios")
-                nivel_indentacion_esperado += 1
-            elif nivel_actual != nivel_indentacion_esperado:
-                errores.append(f"Línea {numero}: Indentación incorrecta en la función. Esperado: {nivel_indentacion_esperado * 4} espacios, Encontrado: {espacios_iniciales} espacios")
+        # Verificar la indentación
+        expected_indentation = indent_level * indent_size
+        if espacios_iniciales != expected_indentation:
+            errores.append(f"Línea {numero}: Indentación incorrecta. Esperado: {expected_indentation} espacios, Encontrado: {espacios_iniciales} espacios")
+
+        # Después de procesar la línea, ajustar el nivel de indentación según las llaves de apertura
+        num_open_braces = linea_sin_comentarios.count('{')
+        indent_level += num_open_braces
 
     return errores, total_lineas
 
-def buscar_carpeta_proyecto_visual_studio(ruta_src):
-    """
-    Busca la carpeta del proyecto de Visual Studio dentro de 'src/'.
-    Asume que la carpeta del proyecto contiene archivos .cpp y .h.
-    """
-    for carpeta in os.listdir(ruta_src):
-        ruta_carpeta = os.path.join(ruta_src, carpeta)
-        if os.path.isdir(ruta_carpeta):
-            # Verifica si dentro de esta carpeta hay archivos .cpp o .h, asumiendo que es un proyecto de Visual Studio
-            for archivo in os.listdir(ruta_carpeta):
-                if archivo.endswith(('.cpp', '.h', '.hpp')):
-                    return ruta_carpeta  # Es la carpeta del proyecto de Visual Studio
-    return ruta_src  # Si no se encontró, vuelve a usar 'src'
+def buscar_carpeta_proyecto(ruta_src):
+    for item in os.listdir(ruta_src):
+        ruta_item = os.path.join(ruta_src, item)
+        if os.path.isdir(ruta_item):
+            if any(archivo.endswith(('.cpp', '.h')) for archivo in os.listdir(ruta_item)):
+                return ruta_item
+    return ruta_src
 
 def analizar_archivo(ruta_archivo):
-    try:
-        # Intentamos leer el archivo con 'utf-8'
-        with open(ruta_archivo, 'r', encoding='utf-8') as file:
+    encoding = detectar_encoding(ruta_archivo)
+    if encoding:
+        with open(ruta_archivo, 'r', encoding=encoding) as file:
             contenido = file.read()
         return analizar_indentacion(contenido)
-    except UnicodeDecodeError:
-        # Si falla, probamos con 'latin-1'
-        try:
-            with open(ruta_archivo, 'r', encoding='latin-1') as file:
-                contenido = file.read()
-            return analizar_indentacion(contenido)
-        except Exception as e:
-            return [f"Error al leer el archivo con 'latin-1': {str(e)}"], 0
-    except Exception as e:
-        return [f"Error al leer el archivo: {str(e)}"], 0
-
+    else:
+        return [f"No se pudo determinar el encoding del archivo: {ruta_archivo}"], 0
 
 def analizar_proyecto(ruta_src):
     reporte = {}
+    archivos_analizados = []
     
-    # Buscar la carpeta del proyecto Visual Studio en src
-    ruta_carpeta_proyecto = buscar_carpeta_proyecto_visual_studio(ruta_src)
+    ruta_carpeta_proyecto = buscar_carpeta_proyecto(ruta_src)
     
     for raiz, dirs, archivos in os.walk(ruta_carpeta_proyecto):
         for archivo in archivos:
-            if archivo.endswith('.cpp'):
+            if archivo.endswith(('.cpp', '.h', '.hpp')):
                 ruta_completa = os.path.join(raiz, archivo)
                 ruta_relativa = os.path.relpath(ruta_completa, ruta_src)
                 errores, total_lineas = analizar_archivo(ruta_completa)
@@ -108,9 +125,11 @@ def analizar_proyecto(ruta_src):
                     'total_lineas': total_lineas,
                     'lineas_correctas': total_lineas - len(errores)
                 }
-    return reporte
+                archivos_analizados.append(ruta_relativa)
+    
+    return reporte, archivos_analizados
 
-def generar_reporte_md(reporte):
+def generar_reporte_md(reporte, archivos_analizados):
     md = f"# 📊 Reporte de Análisis de Indentación\n\n"
     md += f"📅 Fecha de generación: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
 
@@ -145,6 +164,10 @@ def generar_reporte_md(reporte):
         else:
             md += "✅ No se encontraron errores de indentación.\n\n"
 
+    md += "\n## 📁 Archivos Analizados\n\n"
+    for archivo in archivos_analizados:
+        md += f"- {archivo}\n"
+
     return md
 
 def main():
@@ -157,8 +180,8 @@ def main():
         print(f"❌ Error: No se encontró la carpeta src en {ruta_src}")
         return
 
-    reporte = analizar_proyecto(ruta_src)
-    contenido_reporte = generar_reporte_md(reporte)
+    reporte, archivos_analizados = analizar_proyecto(ruta_src)
+    contenido_reporte = generar_reporte_md(reporte, archivos_analizados)
 
     os.makedirs(ruta_salida, exist_ok=True)
     archivo_reporte = os.path.join(ruta_salida, f"REPORTE_ANALISIS_INDENTACION_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md")
@@ -177,9 +200,16 @@ def main():
 
     print("\n📊 Resumen del análisis:")
     print(f"   Total de archivos analizados: {total_archivos}")
+    print(f"   Archivos analizados: {', '.join(archivos_analizados)}")
     print(f"   Total de líneas analizadas: {total_lineas}")
     print(f"   Total de errores de indentación: {total_errores}")
     print(f"   Porcentaje de líneas correctas: {porcentaje_correcto:.2f}%")
+
+    ruta_carpeta_proyecto = buscar_carpeta_proyecto(ruta_src)
+    if ruta_carpeta_proyecto != ruta_src:
+        print(f"\n🖥️ Se detectó un proyecto de Visual Studio en: {os.path.relpath(ruta_carpeta_proyecto, ruta_src)}")
+    else:
+        print("\n🍎 No se detectó una estructura de Visual Studio. Asumiendo proyecto de Mac.")
 
 if __name__ == "__main__":
     main()

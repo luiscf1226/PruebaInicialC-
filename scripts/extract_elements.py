@@ -6,22 +6,26 @@ from collections import Counter
 from datetime import datetime
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-# Función para buscar la carpeta del proyecto creada por Visual Studio dentro de src
+def leer_archivo(ruta_archivo):
+    encodings = ['utf-8', 'latin-1', 'ISO-8859-1']
+    for encoding in encodings:
+        try:
+            with open(ruta_archivo, 'r', encoding=encoding) as file:
+                return file.read()
+        except UnicodeDecodeError:
+            continue
+    print(f"Error: No se pudo leer el archivo {ruta_archivo} con ninguna codificación conocida.")
+    return None
+
 def buscar_carpeta_proyecto_visual_studio(ruta_src):
-    """
-    Busca la carpeta del proyecto de Visual Studio dentro de 'src/'.
-    Asume que la carpeta del proyecto contiene archivos .cpp o .h.
-    """
     for carpeta in os.listdir(ruta_src):
         ruta_carpeta = os.path.join(ruta_src, carpeta)
         if os.path.isdir(ruta_carpeta):
-            # Verifica si dentro de esta carpeta hay archivos .cpp o .h
             for archivo in os.listdir(ruta_carpeta):
                 if archivo.endswith(('.cpp', '.h')):
-                    return ruta_carpeta  # Es la carpeta del proyecto de Visual Studio
-    return ruta_src  # Si no se encontró, vuelve a usar 'src'
+                    return ruta_carpeta
+    return ruta_src
 
-# Función para extraer los elementos del código
 def extraer_elementos(contenido):
     variables = re.findall(r'\b(?:int|float|double|char|bool|string)\s+(\w+)', contenido)
     variables += re.findall(r'\bthis->(\w+)', contenido)
@@ -44,11 +48,9 @@ def extraer_elementos(contenido):
         'operadores': operadores
     }
 
-# Función para calcular el hash del contenido
 def calcular_hash(texto):
     return hashlib.md5(texto.encode()).hexdigest()
 
-# Función para calcular métricas básicas del código
 def calcular_metricas_codigo(contenido):
     lineas = contenido.split('\n')
     return {
@@ -58,30 +60,27 @@ def calcular_metricas_codigo(contenido):
         'lineas_vacias': len([l for l in lineas if not l.strip()]),
     }
 
-# Función para analizar la complejidad del código
 def analizar_complejidad(contenido):
     return len(re.findall(r'\b(if|for|while|switch)\b', contenido))
 
-# Función para extraer secuencias de tokens
 def extraer_secuencias(contenido, longitud=3):
     tokens = re.findall(r'\b\w+\b|[+\-*/%=<>!&|^~;{}()\[\]]', contenido)
     return [' '.join(tokens[i:i+longitud]) for i in range(len(tokens) - longitud + 1)]
 
-# Función para analizar archivos en la carpeta del proyecto
 def analizar_archivos(ruta_src):
     resultados = {}
     todos_elementos = []
     todos_secuencias = []
     
-    # Buscar la carpeta del proyecto Visual Studio en src
     ruta_carpeta_proyecto = buscar_carpeta_proyecto_visual_studio(ruta_src)
 
     for raiz, _, ficheros in os.walk(ruta_carpeta_proyecto):
         for fichero in ficheros:
             if fichero.endswith(('.cpp', '.h')):
                 ruta_completa = os.path.join(raiz, fichero)
-                with open(ruta_completa, 'r', encoding='utf-8') as f:
-                    contenido = f.read()
+                contenido = leer_archivo(ruta_completa)
+                if contenido is None:
+                    continue
                 
                 elementos = extraer_elementos(contenido)
                 todos_elementos.append(' '.join(elementos['variables'] + elementos['funciones'] +
@@ -111,7 +110,6 @@ def analizar_archivos(ruta_src):
                     'secuencias_comunes': Counter(secuencias).most_common(10)
                 }
     
-    # Vectorización de los elementos con TF-IDF
     vectorizer = TfidfVectorizer()
     tfidf_matrix = vectorizer.fit_transform(todos_elementos)
     
@@ -132,12 +130,10 @@ def analizar_archivos(ruta_src):
         'estadisticas_globales': estadisticas_globales
     }
 
-# Función para guardar los resultados en un archivo JSON
 def guardar_resultados(resultados, ruta_salida):
     with open(ruta_salida, 'w', encoding='utf-8') as f:
         json.dump(resultados, f, indent=2, ensure_ascii=False)
 
-# Función para generar un reporte en formato Markdown
 def generar_reporte_md(resultados):
     estadisticas = resultados['estadisticas_globales']
     md = f"# 📊 Reporte de Análisis de Código\n\n"
@@ -156,7 +152,6 @@ def generar_reporte_md(resultados):
 
     return md
 
-# Función principal
 def main():
     print("🔍 Iniciando análisis de código...")
     ruta_proyecto = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

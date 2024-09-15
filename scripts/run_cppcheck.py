@@ -7,62 +7,63 @@ from collections import defaultdict
 SRC_DIR = "../src"
 OUTPUT_DIR = "../output"
 
-# Función para buscar la carpeta del proyecto creada por Visual Studio dentro de src
+def leer_archivo(ruta_archivo):
+    encodings = ['utf-8', 'latin-1', 'ISO-8859-1']
+    for encoding in encodings:
+        try:
+            with open(ruta_archivo, 'r', encoding=encoding) as file:
+                return file.read()
+        except UnicodeDecodeError:
+            continue
+    print(f"Error: No se pudo leer el archivo {ruta_archivo} con ninguna codificación conocida.")
+    return None
+
 def buscar_carpeta_proyecto_visual_studio(ruta_src):
-    """
-    Busca la carpeta del proyecto de Visual Studio dentro de 'src/'.
-    Asume que la carpeta del proyecto contiene archivos .cpp o .h.
-    """
     for carpeta in os.listdir(ruta_src):
         ruta_carpeta = os.path.join(ruta_src, carpeta)
         if os.path.isdir(ruta_carpeta):
-            # Verifica si dentro de esta carpeta hay archivos .cpp o .h
             for archivo in os.listdir(ruta_carpeta):
                 if archivo.endswith(('.cpp', '.h')):
-                    return ruta_carpeta  # Es la carpeta del proyecto de Visual Studio
-    return ruta_src  # Si no se encontró, vuelve a usar 'src'
+                    return ruta_carpeta
+    return ruta_src
 
-# Función para contar líneas de código, comentarios y líneas en blanco
 def count_lines_of_code():
     loc = defaultdict(int)
     ruta_carpeta_proyecto = buscar_carpeta_proyecto_visual_studio(SRC_DIR)
     for root, _, files in os.walk(ruta_carpeta_proyecto):
         for file in files:
             if file.endswith(('.cpp', '.h')):
-                with open(os.path.join(root, file), 'r') as f:
-                    content = f.read()
+                content = leer_archivo(os.path.join(root, file))
+                if content is not None:
                     loc['total'] += len(content.splitlines())
                     loc['code'] += sum(1 for line in content.splitlines() if line.strip() and not line.strip().startswith('//'))
                     loc['comment'] += sum(1 for line in content.splitlines() if line.strip().startswith('//'))
                     loc['blank'] += sum(1 for line in content.splitlines() if not line.strip())
     return loc
 
-# Función para analizar la complejidad ciclomática y cognitiva
 def analyze_complexity():
     complexity = defaultdict(int)
     ruta_carpeta_proyecto = buscar_carpeta_proyecto_visual_studio(SRC_DIR)
     for root, _, files in os.walk(ruta_carpeta_proyecto):
         for file in files:
             if file.endswith('.cpp'):
-                with open(os.path.join(root, file), 'r') as f:
-                    content = f.read()
+                content = leer_archivo(os.path.join(root, file))
+                if content is not None:
                     complexity['cyclomatic'] += content.count('if') + content.count('for') + content.count('while') + content.count('case')
                     complexity['cognitive'] += content.count('if') + content.count('for') + content.count('while') + content.count('switch')
     return complexity
 
-# Función para contar funciones en el código
 def count_functions():
     function_count = 0
     ruta_carpeta_proyecto = buscar_carpeta_proyecto_visual_studio(SRC_DIR)
     for root, _, files in os.walk(ruta_carpeta_proyecto):
         for file in files:
             if file.endswith(('.cpp', '.h')):
-                with open(os.path.join(root, file), 'r') as f:
-                    content = f.read()
+                content = leer_archivo(os.path.join(root, file))
+                if content is not None:
                     function_count += len(re.findall(r'\b\w+\s+\w+\s*\([^)]*\)\s*{', content))
     return function_count
 
-# Función para analizar duplicaciones de código
 def analyze_duplications():
     duplications = 0
     all_code_blocks = []
@@ -71,8 +72,8 @@ def analyze_duplications():
     for root, _, files in os.walk(ruta_carpeta_proyecto):
         for file in files:
             if file.endswith(('.cpp', '.h')):
-                with open(os.path.join(root, file), 'r') as f:
-                    content = f.read()
+                content = leer_archivo(os.path.join(root, file))
+                if content is not None:
                     code_blocks = re.findall(r'\{[^{}]*\}', content)
                     all_code_blocks.extend(code_blocks)
     
@@ -83,7 +84,6 @@ def analyze_duplications():
     
     return duplications
 
-# Función para ejecutar cppcheck y obtener errores y advertencias
 def run_cppcheck():
     try:
         result = subprocess.run(['cppcheck', '--enable=all', '--inconclusive', '--xml', SRC_DIR],
@@ -97,7 +97,6 @@ def run_cppcheck():
         print("Cppcheck no está instalado o no se encuentra en el PATH del sistema.")
         return {'errors': "N/A", 'warnings': "N/A"}
 
-# Función para generar el reporte en formato Markdown
 def generate_report(loc, complexity, function_count, duplications, cppcheck_results):
     report = f"# 📊 Reporte de Análisis de Métricas - Proyecto C++\n\n"
     report += f"📅 Fecha de análisis: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
@@ -132,12 +131,11 @@ def generate_report(loc, complexity, function_count, duplications, cppcheck_resu
 
     return report
 
-# Función para guardar el reporte generado
 def save_report(content):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     filename = f"REPORTE_ANALISIS_METRICAS_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
     filepath = os.path.join(OUTPUT_DIR, filename)
-    with open(filepath, 'w') as f:
+    with open(filepath, 'w', encoding='utf-8') as f:
         f.write(content)
     print(f"Reporte generado: {filepath}")
 
@@ -150,4 +148,3 @@ if __name__ == "__main__":
     
     report_content = generate_report(loc, complexity, function_count, duplications, cppcheck_results)
     save_report(report_content)
-
