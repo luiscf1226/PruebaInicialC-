@@ -4,12 +4,12 @@ on:
     paths:
       - 'scripts/extract_elements.py'
       - 'src/**'
-      - 'requirements.txt'
+      - 'requirements/extract_elements.txt'
   pull_request:
     paths:
       - 'scripts/extract_elements.py'
       - 'src/**'
-      - 'requirements.txt'
+      - 'requirements/extract_elements.txt'
   workflow_dispatch:
 
 jobs:
@@ -26,7 +26,7 @@ jobs:
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install -r requirements/extract_elements.txt
     
     - name: Run extract elements script
       run: |
