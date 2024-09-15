@@ -1,0 +1,49 @@
+name: Run CPPCheck
+on:
+  push:
+    paths:
+      - 'scripts/run_cppcheck.py'
+      - 'src/**'
+      - 'requirements.txt'
+  pull_request:
+    paths:
+      - 'scripts/run_cppcheck.py'
+      - 'src/**'
+      - 'requirements.txt'
+  workflow_dispatch:
+
+jobs:
+  run_cppcheck:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12.5'
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cppcheck
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run CPPCheck script
+      run: |
+        cd scripts
+        python run_cppcheck.py
+      shell: bash
+    
+    - name: Upload output as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: cppcheck-output
+        path: output/cppcheck_output/
+    
+    - name: Always succeed
+      run: exit 0
