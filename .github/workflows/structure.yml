@@ -1,0 +1,37 @@
+name: Run analyze_structure.py
+on:
+  push:
+    paths:
+      - 'scripts/analyze_structure.py'
+      - 'src/**'
+  pull_request:
+    paths:
+      - 'scripts/analyze_structure.py'
+      - 'src/**'
+  workflow_dispatch:
+
+jobs:
+  run_analyze_structure:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python 3.12.5
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12.5'
+    
+    - name: Run analyze_structure.py
+      run: |
+        cd scripts
+        python analyze_structure.py
+      shell: bash
+    
+    - name: Upload output as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: analyze_structure
+        path: output/analyze_structure_output/
+    
+    - name: Always succeed
+      run: exit 0
