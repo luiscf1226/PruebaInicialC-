@@ -4,8 +4,10 @@ import subprocess
 from datetime import datetime
 from collections import defaultdict
 
-SRC_DIR = "../src"
-OUTPUT_DIR = "../output"
+# Cambiamos las rutas para que sean relativas al directorio del script
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+SRC_DIR = os.path.join(os.path.dirname(SCRIPT_DIR), "src")
+OUTPUT_DIR = os.path.join(os.path.dirname(SCRIPT_DIR), "output")
 
 def leer_archivo(ruta_archivo):
     encodings = ['utf-8', 'latin-1', 'ISO-8859-1']
@@ -19,6 +21,9 @@ def leer_archivo(ruta_archivo):
     return None
 
 def buscar_carpeta_proyecto_visual_studio(ruta_src):
+    if not os.path.exists(ruta_src):
+        print(f"Advertencia: El directorio {ruta_src} no existe.")
+        return ruta_src
     for carpeta in os.listdir(ruta_src):
         ruta_carpeta = os.path.join(ruta_src, carpeta)
         if os.path.isdir(ruta_carpeta):
@@ -140,11 +145,17 @@ def save_report(content):
     print(f"Reporte generado: {filepath}")
 
 if __name__ == "__main__":
-    loc = count_lines_of_code()
-    complexity = analyze_complexity()
-    function_count = count_functions()
-    duplications = analyze_duplications()
-    cppcheck_results = run_cppcheck()
-    
-    report_content = generate_report(loc, complexity, function_count, duplications, cppcheck_results)
-    save_report(report_content)
+    if not os.path.exists(SRC_DIR):
+        print(f"Error: El directorio {SRC_DIR} no existe.")
+        print(f"Directorio actual: {os.getcwd()}")
+        print("Contenido del directorio actual:")
+        print(os.listdir('.'))
+    else:
+        loc = count_lines_of_code()
+        complexity = analyze_complexity()
+        function_count = count_functions()
+        duplications = analyze_duplications()
+        cppcheck_results = run_cppcheck()
+        
+        report_content = generate_report(loc, complexity, function_count, duplications, cppcheck_results)
+        save_report(report_content)
