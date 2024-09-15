@@ -4,12 +4,12 @@ on:
     paths:
       - 'scripts/run_cpp_test.py'
       - 'src/**'
-      - 'requirements/run_cpp_test.txt'
+     
   pull_request:
     paths:
       - 'scripts/run_cpp_test.py'
       - 'src/**'
-      - 'requirements/run_cpp_test.txt'
+      
   workflow_dispatch:
 
 jobs:
@@ -31,7 +31,6 @@ jobs:
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements/run_cpp_test.txt
     
     - name: Run C++ test script
       run: |
