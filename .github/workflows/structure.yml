@@ -23,15 +23,18 @@ jobs:
     
     - name: Run analyze_structure.py
       run: |
-        cd scripts
-        python analyze_structure.py
+        python scripts/analyze_structure.py
       shell: bash
     
     - name: Upload output as artifact
       uses: actions/upload-artifact@v3
       with:
         name: analyze_structure
-        path: output/analyze_structure_output/
+        path: output/
+        if-no-files-found: warn
     
     - name: Always succeed
-      run: exit 0
+      if: always()
+      run: |
+        echo "Job completed. Check previous steps for any errors."
+        exit 0
