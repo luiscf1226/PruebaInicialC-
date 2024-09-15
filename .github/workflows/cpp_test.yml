@@ -4,12 +4,10 @@ on:
     paths:
       - 'scripts/run_cpp_test.py'
       - 'src/**'
-     
   pull_request:
     paths:
       - 'scripts/run_cpp_test.py'
       - 'src/**'
-      
   workflow_dispatch:
 
 jobs:
@@ -34,15 +32,18 @@ jobs:
     
     - name: Run C++ test script
       run: |
-        cd scripts
-        python run_cpp_test.py
+        python scripts/run_cpp_test.py
       shell: bash
     
     - name: Upload output as artifact
       uses: actions/upload-artifact@v3
       with:
         name: cpp-test-output
-        path: output/cpp_test_output/
+        path: output/
+        if-no-files-found: warn
     
     - name: Always succeed
-      run: exit 0
+      if: always()
+      run: |
+        echo "Job completed. Check previous steps for any errors."
+        exit 0
