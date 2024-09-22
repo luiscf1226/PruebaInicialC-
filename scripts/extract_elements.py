@@ -1,6 +1,10 @@
 import os
 import re
+import json
+import hashlib
+from collections import Counter
 from datetime import datetime
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 def leer_archivo(ruta_archivo):
     encodings = ['utf-8', 'latin-1', 'ISO-8859-1']
@@ -13,114 +17,166 @@ def leer_archivo(ruta_archivo):
     print(f"Error: No se pudo leer el archivo {ruta_archivo} con ninguna codificación conocida.")
     return None
 
-def buscar_carpeta_proyecto(ruta_src):
+def buscar_carpeta_proyecto_visual_studio(ruta_src):
     for carpeta in os.listdir(ruta_src):
         ruta_carpeta = os.path.join(ruta_src, carpeta)
         if os.path.isdir(ruta_carpeta):
             for archivo in os.listdir(ruta_carpeta):
-                if archivo.endswith('.cpp'):
+                if archivo.endswith(('.cpp', '.h')):
                     return ruta_carpeta
     return ruta_src
 
-def extraer_couts(contenido):
-    patron_cout = r'cout\s*<<\s*"([^"]*)"(?:\s*<<\s*endl\s*)?;'
-    return re.findall(patron_cout, contenido)
-
-def verificar_acentos(texto):
-    palabras_con_acento = re.findall(r'\b\w*[áéíóúÁÉÍÓÚ]\w*\b', texto)
-    return [f"Posible acento en '{palabra}'" for palabra in palabras_con_acento]
-
-def analizar_archivo(ruta_archivo):
-    contenido = leer_archivo(ruta_archivo)
-    if contenido is None:
-        return [], []
-
-    salidas = extraer_couts(contenido)
-    errores = []
-
-    for salida in salidas:
-        errores_acentos = verificar_acentos(salida)
-        if errores_acentos:
-            errores.append({"texto": salida, "errores": errores_acentos})
-
-    return salidas, errores
-
-def analizar_proyecto(ruta_src):
-    reporte = {
-        "archivos_analizados": 0,
-        "total_salidas": 0,
-        "salidas_con_errores": 0,
-        "total_errores": 0,
-        "detalles": {}
+def extraer_elementos(contenido):
+    variables = re.findall(r'\b(?:int|float|double|char|bool|string)\s+(\w+)', contenido)
+    variables += re.findall(r'\bthis->(\w+)', contenido)
+    funciones = re.findall(r'\b(\w+)\s*\([^)]*\)\s*{', contenido)
+    clases = re.findall(r'\bclass\s+(\w+)', contenido)
+    comentarios = re.findall(r'//.*?$|/\*.*?\*/', contenido, re.DOTALL | re.MULTILINE)
+    estructuras_control = re.findall(r'\b(if|else|for|while|switch|case)\b', contenido)
+    llamadas_funciones = re.findall(r'\b(\w+)\s*\(', contenido)
+    tipos_datos = re.findall(r'\b(int|float|double|char|bool|string|auto)\b', contenido)
+    operadores = re.findall(r'[+\-*/%=<>!&|^~]', contenido)
+    
+    return {
+        'variables': variables,
+        'funciones': funciones,
+        'clases': clases,
+        'comentarios': [c.strip() for c in comentarios],
+        'estructuras_control': estructuras_control,
+        'llamadas_funciones': llamadas_funciones,
+        'tipos_datos': tipos_datos,
+        'operadores': operadores
     }
 
-    ruta_carpeta_proyecto = buscar_carpeta_proyecto(ruta_src)
+def calcular_hash(texto):
+    return hashlib.md5(texto.encode()).hexdigest()
 
-    for raiz, dirs, archivos in os.walk(ruta_carpeta_proyecto):
-        for archivo in archivos:
-            if archivo.endswith('.cpp'):
-                reporte["archivos_analizados"] += 1
-                ruta_completa = os.path.join(raiz, archivo)
-                ruta_relativa = os.path.relpath(ruta_completa, ruta_src)
-                salidas, errores = analizar_archivo(ruta_completa)
-                reporte["total_salidas"] += len(salidas)
-                reporte["salidas_con_errores"] += len(errores)
-                reporte["total_errores"] += sum(len(e["errores"]) for e in errores)
-                if salidas or errores:
-                    reporte["detalles"][ruta_relativa] = {'salidas': salidas, 'errores': errores}
-    return reporte
+def calcular_metricas_codigo(contenido):
+    lineas = contenido.split('\n')
+    return {
+        'total_lineas': len(lineas),
+        'lineas_codigo': len([l for l in lineas if l.strip() and not l.strip().startswith('//')]),
+        'lineas_comentarios': len([l for l in lineas if l.strip().startswith('//')]),
+        'lineas_vacias': len([l for l in lineas if not l.strip()]),
+    }
 
-def generar_reporte_md(reporte):
-    md = f"# Reporte de Análisis de Acentos en Salidas cout\n\n"
-    md += f"Fecha de generación: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+def analizar_complejidad(contenido):
+    return len(re.findall(r'\b(if|for|while|switch)\b', contenido))
 
-    md += "## Estadísticas Generales\n\n"
-    md += f"- Archivos analizados: {reporte['archivos_analizados']}\n"
-    md += f"- Total de salidas encontradas: {reporte['total_salidas']}\n"
-    md += f"- Salidas con posibles errores: {reporte['salidas_con_errores']}\n"
-    md += f"- Total de posibles errores detectados: {reporte['total_errores']}\n"
-    if reporte['total_salidas'] > 0:
-        md += f"- Porcentaje de salidas con posibles errores: {(reporte['salidas_con_errores'] / reporte['total_salidas']) * 100:.2f}%\n\n"
+def extraer_secuencias(contenido, longitud=3):
+    tokens = re.findall(r'\b\w+\b|[+\-*/%=<>!&|^~;{}()\[\]]', contenido)
+    return [' '.join(tokens[i:i+longitud]) for i in range(len(tokens) - longitud + 1)]
 
-    md += "## Detalles por Archivo\n\n"
-    for archivo, datos in reporte["detalles"].items():
-        md += f"### Archivo: `{archivo}`\n\n"
-        
-        if datos['salidas']:
-            md += "#### Salidas encontradas:\n\n"
-            for salida in datos['salidas']:
-                md += f"- ```{salida}```\n"
-            md += "\n"
-        
-        if datos['errores']:
-            md += "#### Posibles errores de acentuación:\n\n"
-            for error in datos['errores']:
-                md += f"- Texto: ```{error['texto']}```\n"
-                for e in error['errores']:
-                    md += f"  - {e}\n"
-                md += "\n"
+def analizar_archivos(ruta_src):
+    resultados = {}
+    todos_elementos = []
+    todos_secuencias = []
+    
+    ruta_carpeta_proyecto = buscar_carpeta_proyecto_visual_studio(ruta_src)
+
+    for raiz, _, ficheros in os.walk(ruta_carpeta_proyecto):
+        for fichero in ficheros:
+            if fichero.endswith(('.cpp', '.h')):
+                ruta_completa = os.path.join(raiz, fichero)
+                contenido = leer_archivo(ruta_completa)
+                if contenido is None:
+                    continue
+                
+                elementos = extraer_elementos(contenido)
+                todos_elementos.append(' '.join(elementos['variables'] + elementos['funciones'] +
+                                                elementos['clases'] + elementos['comentarios']))
+                
+                secuencias = extraer_secuencias(contenido)
+                todos_secuencias.extend(secuencias)
+                
+                metricas = calcular_metricas_codigo(contenido)
+                complejidad = analizar_complejidad(contenido)
+                
+                resultados[fichero] = {
+                    'elementos': elementos,
+                    'hash_contenido': calcular_hash(contenido),
+                    'metricas': metricas,
+                    'complejidad': complejidad,
+                    'estadisticas': {
+                        'num_variables': len(elementos['variables']),
+                        'num_funciones': len(elementos['funciones']),
+                        'num_clases': len(elementos['clases']),
+                        'num_comentarios': len(elementos['comentarios']),
+                        'freq_estructuras_control': dict(Counter(elementos['estructuras_control'])),
+                        'freq_llamadas_funciones': dict(Counter(elementos['llamadas_funciones'])),
+                        'freq_tipos_datos': dict(Counter(elementos['tipos_datos'])),
+                        'freq_operadores': dict(Counter(elementos['operadores']))
+                    },
+                    'secuencias_comunes': Counter(secuencias).most_common(10)
+                }
+    
+    vectorizer = TfidfVectorizer()
+    tfidf_matrix = vectorizer.fit_transform(todos_elementos)
+    
+    for i, (fichero, datos) in enumerate(resultados.items()):
+        datos['vector_tfidf'] = tfidf_matrix[i].toarray()[0].tolist()
+    
+    estadisticas_globales = {
+        'total_archivos': len(resultados),
+        'total_lineas': sum(datos['metricas']['total_lineas'] for datos in resultados.values()),
+        'total_funciones': sum(datos['estadisticas']['num_funciones'] for datos in resultados.values()),
+        'total_clases': sum(datos['estadisticas']['num_clases'] for datos in resultados.values()),
+        'complejidad_promedio': sum(datos['complejidad'] for datos in resultados.values()) / len(resultados) if resultados else 0,
+        'secuencias_mas_comunes': Counter(todos_secuencias).most_common(20)
+    }
+    
+    return {
+        'archivos': resultados,
+        'estadisticas_globales': estadisticas_globales
+    }
+
+def guardar_resultados(resultados, ruta_salida):
+    with open(ruta_salida, 'w', encoding='utf-8') as f:
+        json.dump(resultados, f, indent=2, ensure_ascii=False)
+
+def generar_reporte_md(resultados):
+    estadisticas = resultados['estadisticas_globales']
+    md = f"# 📊 Reporte de Análisis de Código\n\n"
+    md += f"📅 Fecha de generación: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+
+    md += "## 📈 Estadísticas Globales\n\n"
+    md += f"- 📁 Total de archivos analizados: **{estadisticas['total_archivos']}**\n"
+    md += f"- 📝 Total de líneas de código: **{estadisticas['total_lineas']}**\n"
+    md += f"- 🔧 Total de funciones: **{estadisticas['total_funciones']}**\n"
+    md += f"- 🏗️ Total de clases: **{estadisticas['total_clases']}**\n"
+    md += f"- 🔄 Complejidad promedio: **{estadisticas['complejidad_promedio']:.2f}**\n\n"
+
+    md += "### 🔁 Secuencias más comunes\n\n"
+    for seq, count in estadisticas['secuencias_mas_comunes'][:5]:
+        md += f"- `{seq}`: {count} veces\n"
 
     return md
 
 def main():
+    print("🔍 Iniciando análisis de código...")
     ruta_proyecto = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     ruta_src = os.path.join(ruta_proyecto, 'src')
-    ruta_salida = os.path.join(ruta_proyecto, 'output')
+    ruta_output = os.path.join(ruta_proyecto, 'output')
+    os.makedirs(ruta_output, exist_ok=True)
 
-    if not os.path.exists(ruta_src):
-        print(f"Error: No se encontró la carpeta src en {ruta_src}")
-        return
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    ruta_resultados = os.path.join(ruta_output, f'caracteristicas_a_comparar_{timestamp}.json')
+    ruta_reporte = os.path.join(ruta_output, f'reporte_analisis_{timestamp}.md')
 
-    reporte = analizar_proyecto(ruta_src)
-    contenido_reporte = generar_reporte_md(reporte)
+    print("📊 Analizando archivos...")
+    resultados = analizar_archivos(ruta_src)
+    
+    print("💾 Guardando resultados detallados...")
+    guardar_resultados(resultados, ruta_resultados)
 
-    os.makedirs(ruta_salida, exist_ok=True)
-    archivo_reporte = os.path.join(ruta_salida, f"REPORTE_ANALISIS_ACENTOS_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md")
+    print("📝 Generando reporte resumido...")
+    reporte_md = generar_reporte_md(resultados)
+    with open(ruta_reporte, 'w', encoding='utf-8') as f:
+        f.write(reporte_md)
 
-    with open(archivo_reporte, 'w', encoding='utf-8') as f:
-        f.write(contenido_reporte)
-
-    print(f"Análisis completado. Reporte guardado en {archivo_reporte}")
+    print(f"✅ Análisis completado.")
+    print(f"📊 Resultados detallados guardados en: {ruta_resultados}")
+    print(f"📑 Reporte resumido guardado en: {ruta_reporte}")
 
 if __name__ == "__main__":
     main()
