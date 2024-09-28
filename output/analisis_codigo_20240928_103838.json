@@ -1,0 +1,175 @@
+{
+  "archivos": {
+    "/Users/luiscf1226/Documents/LCF_Unitec/ProyectoFase1/cpp_project/src/main/estudiante.h": {
+      "clases": {
+        "nombres": [
+          "Estudiante"
+        ],
+        "total": 1,
+        "existe": true
+      },
+      "funciones": {
+        "nombres": [],
+        "total": 0,
+        "existe": false
+      },
+      "variables": {
+        "nombres": [
+          "nombre",
+          "edad",
+          "edad",
+          "getNombre",
+          "getEdad",
+          "calificacion",
+          "calcularPromedio",
+          "estaAprobado",
+          "nombre",
+          "r"
+        ],
+        "total": 10
+      },
+      "comentarios": {
+        "total": 1,
+        "contenido": [
+          "// ESTUDIANTE_H"
+        ]
+      },
+      "librerias": {
+        "nombres": [
+          "string",
+          "vector"
+        ],
+        "total": 2
+      },
+      "complejidad": {
+        "estructuras_control": {},
+        "operadores_logicos": 0,
+        "llamadas_funciones": 7,
+        "complejidad_ciclomatica": 1
+      }
+    },
+    "/Users/luiscf1226/Documents/LCF_Unitec/ProyectoFase1/cpp_project/src/main/estudiante.cpp": {
+      "clases": {
+        "nombres": [],
+        "total": 0,
+        "existe": false
+      },
+      "funciones": {
+        "nombres": [
+          "calificaciones",
+          "getNombre",
+          "getEdad",
+          "getCalificaciones",
+          "agregarCalificacion",
+          "calcularPromedio",
+          "for",
+          "estaAprobado"
+        ],
+        "total": 8,
+        "existe": true
+      },
+      "variables": {
+        "nombres": [
+          "edad",
+          "Estudiante",
+          "Estudiante",
+          "calificacion",
+          "Estudiante",
+          "suma",
+          "Estudiante",
+          "nombre",
+          "r",
+          "calificacion"
+        ],
+        "total": 10
+      },
+      "comentarios": {
+        "total": 5,
+        "contenido": [
+          "// Constructor de la clase Estudiante",
+          "// Métodos getter",
+          "// Método para agregar una nueva calificación",
+          "// Método para calcular el promedio de calificaciones",
+          "// Método para verificar si el estudiante está aprobado"
+        ]
+      },
+      "librerias": {
+        "nombres": [
+          "estudiante.h"
+        ],
+        "total": 1
+      },
+      "complejidad": {
+        "estructuras_control": {
+          "if": 1,
+          "for": 1
+        },
+        "operadores_logicos": 0,
+        "llamadas_funciones": 16,
+        "complejidad_ciclomatica": 3
+      }
+    },
+    "/Users/luiscf1226/Documents/LCF_Unitec/ProyectoFase1/cpp_project/src/main/main.cpp": {
+      "clases": {
+        "nombres": [],
+        "total": 0,
+        "existe": false
+      },
+      "funciones": {
+        "nombres": [
+          "calcularPromedio",
+          "for",
+          "main",
+          "for"
+        ],
+        "total": 4,
+        "existe": true
+      },
+      "variables": {
+        "nombres": [
+          "calcularPromedio",
+          "suma",
+          "main",
+          "r",
+          "calificacion",
+          "estudiante"
+        ],
+        "total": 6
+      },
+      "comentarios": {
+        "total": 3,
+        "contenido": [
+          "// Función para calcular el promedio de calificaciones",
+          "// Crear algunos estudiantes de ejemplo",
+          "// Mostrar información de los estudiantes"
+        ]
+      },
+      "librerias": {
+        "nombres": [
+          "iostream",
+          "vector",
+          "string",
+          "estudiante.h"
+        ],
+        "total": 4
+      },
+      "complejidad": {
+        "estructuras_control": {
+          "if": 1,
+          "for": 2
+        },
+        "operadores_logicos": 0,
+        "llamadas_funciones": 17,
+        "complejidad_ciclomatica": 4
+      }
+    }
+  },
+  "estadisticas_globales": {
+    "total_archivos": 3,
+    "total_clases": 1,
+    "total_funciones": 12,
+    "total_variables": 26,
+    "total_librerias": 7,
+    "complejidad_promedio": 2.6666666666666665
+  }
+}

@@ -1,32 +1,37 @@
 #include <iostream>
+#include <vector>
+#include <string>
+#include "estudiante.h"
+
 using namespace std;
 
+// Función para calcular el promedio de calificaciones
+double calcularPromedio(const vector<double>& calificaciones) {
+    if (calificaciones.empty()) {
+        return 0.0;
+    }
+    double suma = 0.0;
+    for (const auto& calificacion : calificaciones) {
+        suma += calificacion;
+    }
+    return suma / calificaciones.size();
+}
+
 int main() {
-    // Correctamente acentuadas
-    cout << "Hola, ¿cómo estás?" << endl;
-    cout << "El niño está en la escuela." << endl;
+    vector<Estudiante> estudiantes;
     
-    // Deberían tener acento pero no lo tienen
-    cout << "La musica clasica es relajante." << endl;
-    cout << "El pajaro volo sobre el arbol." << endl;
-    
-    // No necesitan acento
-    cout << "El perro corre en el parque." << endl;
-    cout << "La casa es grande y bonita." << endl;
-    
-    // Mezcla de correctas e incorrectas
-    cout << "José fue al café, pero pidio te." << endl;
-    
-    // Palabras con tilde en diferentes posiciones
-    cout << "Análisis, cántico, matemático" << endl;
-    cout << "Telefono, examenes, jovenes" << endl;
-    
-    // Mayúsculas con y sin acento
-    cout << "MÉXICO es un país hermoso." << endl;
-    cout << "PERU tiene una rica historia." << endl;
-    
-    // Frases largas con múltiples casos
-    cout << "La educacion es la llave del exito, pero requiere dedicación y esfuerzo." << endl;
-    
+    // Crear algunos estudiantes de ejemplo
+    estudiantes.push_back(Estudiante("Juan", 20, {8.5, 9.0, 7.5}));
+    estudiantes.push_back(Estudiante("Maria", 22, {9.5, 8.0, 9.5}));
+    estudiantes.push_back(Estudiante("Carlos", 21, {7.0, 8.5, 8.0}));
+
+    // Mostrar información de los estudiantes
+    for (const auto& estudiante : estudiantes) {
+        cout << "Nombre: " << estudiante.getNombre() << endl;
+        cout << "Edad: " << estudiante.getEdad() << endl;
+        cout << "Promedio: " << calcularPromedio(estudiante.getCalificaciones()) << endl;
+        cout << "------------------------" << endl;
+    }
+
     return 0;
 }

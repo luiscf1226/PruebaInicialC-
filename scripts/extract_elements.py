@@ -1,10 +1,8 @@
 import os
 import re
 import json
-import hashlib
 from collections import Counter
 from datetime import datetime
-from sklearn.feature_extraction.text import TfidfVectorizer
 
 def leer_archivo(ruta_archivo):
     encodings = ['utf-8', 'latin-1', 'ISO-8859-1']
@@ -17,112 +15,90 @@ def leer_archivo(ruta_archivo):
     print(f"Error: No se pudo leer el archivo {ruta_archivo} con ninguna codificación conocida.")
     return None
 
-def buscar_carpeta_proyecto_visual_studio(ruta_src):
-    for carpeta in os.listdir(ruta_src):
-        ruta_carpeta = os.path.join(ruta_src, carpeta)
-        if os.path.isdir(ruta_carpeta):
-            for archivo in os.listdir(ruta_carpeta):
-                if archivo.endswith(('.cpp', '.h')):
-                    return ruta_carpeta
-    return ruta_src
+def buscar_carpetas_proyecto(ruta_src):
+    carpetas_proyecto = []
+    for raiz, dirs, archivos in os.walk(ruta_src):
+        if any(archivo.endswith(('.cpp', '.h')) for archivo in archivos):
+            carpetas_proyecto.append(raiz)
+    return carpetas_proyecto
 
 def extraer_elementos(contenido):
-    variables = re.findall(r'\b(?:int|float|double|char|bool|string)\s+(\w+)', contenido)
-    variables += re.findall(r'\bthis->(\w+)', contenido)
-    funciones = re.findall(r'\b(\w+)\s*\([^)]*\)\s*{', contenido)
     clases = re.findall(r'\bclass\s+(\w+)', contenido)
+    funciones = re.findall(r'\b(\w+)\s*\([^)]*\)\s*(?:const)?\s*(?:override)?\s*{', contenido)
+    variables = re.findall(r'\b(?:int|float|double|char|bool|string|vector)\s+(\w+)', contenido)
+    variables += re.findall(r'\bconst\s+\w+\s*&?\s*(\w+)', contenido)
     comentarios = re.findall(r'//.*?$|/\*.*?\*/', contenido, re.DOTALL | re.MULTILINE)
-    estructuras_control = re.findall(r'\b(if|else|for|while|switch|case)\b', contenido)
-    llamadas_funciones = re.findall(r'\b(\w+)\s*\(', contenido)
-    tipos_datos = re.findall(r'\b(int|float|double|char|bool|string|auto)\b', contenido)
-    operadores = re.findall(r'[+\-*/%=<>!&|^~]', contenido)
+    librerias = re.findall(r'#include\s*[<"]([^>"]+)[>"]', contenido)
     
     return {
-        'variables': variables,
-        'funciones': funciones,
         'clases': clases,
+        'funciones': funciones,
+        'variables': variables,
         'comentarios': [c.strip() for c in comentarios],
-        'estructuras_control': estructuras_control,
-        'llamadas_funciones': llamadas_funciones,
-        'tipos_datos': tipos_datos,
-        'operadores': operadores
+        'librerias': librerias
     }
 
-def calcular_hash(texto):
-    return hashlib.md5(texto.encode()).hexdigest()
-
-def calcular_metricas_codigo(contenido):
-    lineas = contenido.split('\n')
-    return {
-        'total_lineas': len(lineas),
-        'lineas_codigo': len([l for l in lineas if l.strip() and not l.strip().startswith('//')]),
-        'lineas_comentarios': len([l for l in lineas if l.strip().startswith('//')]),
-        'lineas_vacias': len([l for l in lineas if not l.strip()]),
+def calcular_complejidad(contenido):
+    estructuras_control = re.findall(r'\b(if|else|for|while|switch|case)\b', contenido)
+    operadores_logicos = re.findall(r'\b(&&|\|\|)\b', contenido)
+    llamadas_funciones = re.findall(r'\b\w+\s*\(', contenido)
+    
+    complejidad = {
+        'estructuras_control': Counter(estructuras_control),
+        'operadores_logicos': len(operadores_logicos),
+        'llamadas_funciones': len(llamadas_funciones),
+        'complejidad_ciclomatica': len(estructuras_control) + len(operadores_logicos) + 1
     }
+    return complejidad
 
-def analizar_complejidad(contenido):
-    return len(re.findall(r'\b(if|for|while|switch)\b', contenido))
-
-def extraer_secuencias(contenido, longitud=3):
-    tokens = re.findall(r'\b\w+\b|[+\-*/%=<>!&|^~;{}()\[\]]', contenido)
-    return [' '.join(tokens[i:i+longitud]) for i in range(len(tokens) - longitud + 1)]
-
-def analizar_archivos(ruta_src):
+def analizar_archivos(carpetas_proyecto):
     resultados = {}
-    todos_elementos = []
-    todos_secuencias = []
     
-    ruta_carpeta_proyecto = buscar_carpeta_proyecto_visual_studio(ruta_src)
-
-    for raiz, _, ficheros in os.walk(ruta_carpeta_proyecto):
-        for fichero in ficheros:
-            if fichero.endswith(('.cpp', '.h')):
-                ruta_completa = os.path.join(raiz, fichero)
-                contenido = leer_archivo(ruta_completa)
-                if contenido is None:
-                    continue
-                
-                elementos = extraer_elementos(contenido)
-                todos_elementos.append(' '.join(elementos['variables'] + elementos['funciones'] +
-                                                elementos['clases'] + elementos['comentarios']))
-                
-                secuencias = extraer_secuencias(contenido)
-                todos_secuencias.extend(secuencias)
-                
-                metricas = calcular_metricas_codigo(contenido)
-                complejidad = analizar_complejidad(contenido)
-                
-                resultados[fichero] = {
-                    'elementos': elementos,
-                    'hash_contenido': calcular_hash(contenido),
-                    'metricas': metricas,
-                    'complejidad': complejidad,
-                    'estadisticas': {
-                        'num_variables': len(elementos['variables']),
-                        'num_funciones': len(elementos['funciones']),
-                        'num_clases': len(elementos['clases']),
-                        'num_comentarios': len(elementos['comentarios']),
-                        'freq_estructuras_control': dict(Counter(elementos['estructuras_control'])),
-                        'freq_llamadas_funciones': dict(Counter(elementos['llamadas_funciones'])),
-                        'freq_tipos_datos': dict(Counter(elementos['tipos_datos'])),
-                        'freq_operadores': dict(Counter(elementos['operadores']))
-                    },
-                    'secuencias_comunes': Counter(secuencias).most_common(10)
-                }
-    
-    vectorizer = TfidfVectorizer()
-    tfidf_matrix = vectorizer.fit_transform(todos_elementos)
-    
-    for i, (fichero, datos) in enumerate(resultados.items()):
-        datos['vector_tfidf'] = tfidf_matrix[i].toarray()[0].tolist()
+    for carpeta in carpetas_proyecto:
+        for raiz, _, archivos in os.walk(carpeta):
+            for archivo in archivos:
+                if archivo.endswith(('.cpp', '.h')):
+                    ruta_completa = os.path.join(raiz, archivo)
+                    contenido = leer_archivo(ruta_completa)
+                    if contenido is None:
+                        continue
+                    
+                    elementos = extraer_elementos(contenido)
+                    complejidad = calcular_complejidad(contenido)
+                    
+                    resultados[ruta_completa] = {
+                        'clases': {
+                            'nombres': elementos['clases'],
+                            'total': len(elementos['clases']),
+                            'existe': len(elementos['clases']) > 0
+                        },
+                        'funciones': {
+                            'nombres': elementos['funciones'],
+                            'total': len(elementos['funciones']),
+                            'existe': len(elementos['funciones']) > 0
+                        },
+                        'variables': {
+                            'nombres': elementos['variables'],
+                            'total': len(elementos['variables'])
+                        },
+                        'comentarios': {
+                            'total': len(elementos['comentarios']),
+                            'contenido': elementos['comentarios']
+                        },
+                        'librerias': {
+                            'nombres': elementos['librerias'],
+                            'total': len(elementos['librerias'])
+                        },
+                        'complejidad': complejidad
+                    }
     
     estadisticas_globales = {
         'total_archivos': len(resultados),
-        'total_lineas': sum(datos['metricas']['total_lineas'] for datos in resultados.values()),
-        'total_funciones': sum(datos['estadisticas']['num_funciones'] for datos in resultados.values()),
-        'total_clases': sum(datos['estadisticas']['num_clases'] for datos in resultados.values()),
-        'complejidad_promedio': sum(datos['complejidad'] for datos in resultados.values()) / len(resultados) if resultados else 0,
-        'secuencias_mas_comunes': Counter(todos_secuencias).most_common(20)
+        'total_clases': sum(datos['clases']['total'] for datos in resultados.values()),
+        'total_funciones': sum(datos['funciones']['total'] for datos in resultados.values()),
+        'total_variables': sum(datos['variables']['total'] for datos in resultados.values()),
+        'total_librerias': sum(datos['librerias']['total'] for datos in resultados.values()),
+        'complejidad_promedio': sum(datos['complejidad']['complejidad_ciclomatica'] for datos in resultados.values()) / len(resultados) if resultados else 0
     }
     
     return {
@@ -141,14 +117,25 @@ def generar_reporte_md(resultados):
 
     md += "## 📈 Estadísticas Globales\n\n"
     md += f"- 📁 Total de archivos analizados: **{estadisticas['total_archivos']}**\n"
-    md += f"- 📝 Total de líneas de código: **{estadisticas['total_lineas']}**\n"
-    md += f"- 🔧 Total de funciones: **{estadisticas['total_funciones']}**\n"
     md += f"- 🏗️ Total de clases: **{estadisticas['total_clases']}**\n"
-    md += f"- 🔄 Complejidad promedio: **{estadisticas['complejidad_promedio']:.2f}**\n\n"
+    md += f"- 🔧 Total de funciones: **{estadisticas['total_funciones']}**\n"
+    md += f"- 📊 Total de variables: **{estadisticas['total_variables']}**\n"
+    md += f"- 📚 Total de librerías: **{estadisticas['total_librerias']}**\n"
+    md += f"- 🔄 Complejidad ciclomática promedio: **{estadisticas['complejidad_promedio']:.2f}**\n\n"
 
-    md += "### 🔁 Secuencias más comunes\n\n"
-    for seq, count in estadisticas['secuencias_mas_comunes'][:5]:
-        md += f"- `{seq}`: {count} veces\n"
+    md += "## 📑 Detalles por Archivo\n\n"
+    for archivo, datos in resultados['archivos'].items():
+        md += f"### {os.path.basename(archivo)}\n\n"
+        md += f"Ruta: {archivo}\n\n"
+        md += f"- Clases: {datos['clases']['total']} ({', '.join(datos['clases']['nombres'][:5])})\n"
+        md += f"- Funciones: {datos['funciones']['total']} ({', '.join(datos['funciones']['nombres'][:5])})\n"
+        md += f"- Variables: {datos['variables']['total']}\n"
+        md += f"- Comentarios: {datos['comentarios']['total']}\n"
+        md += f"- Librerías: {datos['librerias']['total']} ({', '.join(datos['librerias']['nombres'])})\n"
+        md += f"- Complejidad Ciclomática: {datos['complejidad']['complejidad_ciclomatica']}\n"
+        md += f"- Estructuras de Control: {dict(datos['complejidad']['estructuras_control'])}\n"
+        md += f"- Operadores Lógicos: {datos['complejidad']['operadores_logicos']}\n"
+        md += f"- Llamadas a Funciones: {datos['complejidad']['llamadas_funciones']}\n\n"
 
     return md
 
@@ -160,11 +147,15 @@ def main():
     os.makedirs(ruta_output, exist_ok=True)
 
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    ruta_resultados = os.path.join(ruta_output, f'caracteristicas_a_comparar_{timestamp}.json')
+    ruta_resultados = os.path.join(ruta_output, f'analisis_codigo_{timestamp}.json')
     ruta_reporte = os.path.join(ruta_output, f'reporte_analisis_{timestamp}.md')
 
+    print("🔎 Buscando carpetas del proyecto...")
+    carpetas_proyecto = buscar_carpetas_proyecto(ruta_src)
+
+    print(f"📂 Carpetas encontradas: {len(carpetas_proyecto)}")
     print("📊 Analizando archivos...")
-    resultados = analizar_archivos(ruta_src)
+    resultados = analizar_archivos(carpetas_proyecto)
     
     print("💾 Guardando resultados detallados...")
     guardar_resultados(resultados, ruta_resultados)
