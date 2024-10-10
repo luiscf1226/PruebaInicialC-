@@ -25,7 +25,14 @@ jobs:
         python scripts/analyze_structure.py
       shell: bash
 
-    # Print the output to the logs instead of uploading as a zip
+    - name: Upload output as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: analyze_structure
+        path: output/
+        if-no-files-found: warn
+
+    # Display the output to the logs
     - name: Display output
       run: |
         cat output/* || echo "No output found"
