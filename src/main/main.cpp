@@ -32,6 +32,6 @@ int main() {
         cout << "Promedio: " << calcularPromedio(estudiante.getCalificaciones()) << endl;
         cout << "------------------------" << endl;
     }
-
+//
     return 0;
 }
