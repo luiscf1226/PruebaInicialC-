@@ -94,11 +94,11 @@ def analizar_archivos(carpetas_proyecto):
     
     estadisticas_globales = {
         'total_archivos': len(resultados),
-        'total_clases': sum(datos['clases']['total'] for datos in resultados.values()),
-        'total_funciones': sum(datos['funciones']['total'] for datos in resultados.values()),
-        'total_variables': sum(datos['variables']['total'] for datos in resultados.values()),
-        'total_librerias': sum(datos['librerias']['total'] for datos in resultados.values()),
-        'complejidad_promedio': sum(datos['complejidad']['complejidad_ciclomatica'] for datos in resultados.values()) / len(resultados) if resultados else 0
+        'total_clases': sum(datos['clases']['total'] for datos en resultados.values()),
+        'total_funciones': sum(datos['funciones']['total'] for datos en resultados.values()),
+        'total_variables': sum(datos['variables']['total'] for datos en resultados.values()),
+        'total_librerias': sum(datos['librerias']['total'] for datos en resultados.values()),
+        'complejidad_promedio': sum(datos['complejidad']['complejidad_ciclomatica'] for datos en resultados.values()) / len(resultados) if resultados else 0
     }
     
     return {
@@ -110,35 +110,6 @@ def guardar_resultados(resultados, ruta_salida):
     with open(ruta_salida, 'w', encoding='utf-8') as f:
         json.dump(resultados, f, indent=2, ensure_ascii=False)
 
-def generar_reporte_md(resultados):
-    estadisticas = resultados['estadisticas_globales']
-    md = f"# 📊 Reporte de Análisis de Código\n\n"
-    md += f"📅 Fecha de generación: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-
-    md += "## 📈 Estadísticas Globales\n\n"
-    md += f"- 📁 Total de archivos analizados: **{estadisticas['total_archivos']}**\n"
-    md += f"- 🏗️ Total de clases: **{estadisticas['total_clases']}**\n"
-    md += f"- 🔧 Total de funciones: **{estadisticas['total_funciones']}**\n"
-    md += f"- 📊 Total de variables: **{estadisticas['total_variables']}**\n"
-    md += f"- 📚 Total de librerías: **{estadisticas['total_librerias']}**\n"
-    md += f"- 🔄 Complejidad ciclomática promedio: **{estadisticas['complejidad_promedio']:.2f}**\n\n"
-
-    md += "## 📑 Detalles por Archivo\n\n"
-    for archivo, datos in resultados['archivos'].items():
-        md += f"### {os.path.basename(archivo)}\n\n"
-        md += f"Ruta: {archivo}\n\n"
-        md += f"- Clases: {datos['clases']['total']} ({', '.join(datos['clases']['nombres'][:5])})\n"
-        md += f"- Funciones: {datos['funciones']['total']} ({', '.join(datos['funciones']['nombres'][:5])})\n"
-        md += f"- Variables: {datos['variables']['total']}\n"
-        md += f"- Comentarios: {datos['comentarios']['total']}\n"
-        md += f"- Librerías: {datos['librerias']['total']} ({', '.join(datos['librerias']['nombres'])})\n"
-        md += f"- Complejidad Ciclomática: {datos['complejidad']['complejidad_ciclomatica']}\n"
-        md += f"- Estructuras de Control: {dict(datos['complejidad']['estructuras_control'])}\n"
-        md += f"- Operadores Lógicos: {datos['complejidad']['operadores_logicos']}\n"
-        md += f"- Llamadas a Funciones: {datos['complejidad']['llamadas_funciones']}\n\n"
-
-    return md
-
 def main():
     print("🔍 Iniciando análisis de código...")
     ruta_proyecto = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -148,7 +119,6 @@ def main():
 
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     ruta_resultados = os.path.join(ruta_output, f'analisis_codigo_{timestamp}.json')
-    ruta_reporte = os.path.join(ruta_output, f'reporte_analisis_{timestamp}.md')
 
     print("🔎 Buscando carpetas del proyecto...")
     carpetas_proyecto = buscar_carpetas_proyecto(ruta_src)
@@ -160,14 +130,8 @@ def main():
     print("💾 Guardando resultados detallados...")
     guardar_resultados(resultados, ruta_resultados)
 
-    print("📝 Generando reporte resumido...")
-    reporte_md = generar_reporte_md(resultados)
-    with open(ruta_reporte, 'w', encoding='utf-8') as f:
-        f.write(reporte_md)
-
     print(f"✅ Análisis completado.")
     print(f"📊 Resultados detallados guardados en: {ruta_resultados}")
-    print(f"📑 Reporte resumido guardado en: {ruta_reporte}")
 
 if __name__ == "__main__":
     main()
