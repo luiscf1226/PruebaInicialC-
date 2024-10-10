@@ -28,7 +28,7 @@ def analizar_estructura(ruta_proyecto):
         '.gitignore': 'Archivo',
         'scripts/analyze_structure.py': 'Archivo'
     }
-
+#
     # Inicializamos el reporte
     reporte = {
         "fecha_hora": datetime.now().isoformat(),
