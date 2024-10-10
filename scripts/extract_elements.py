@@ -94,11 +94,11 @@ def analizar_archivos(carpetas_proyecto):
     
     estadisticas_globales = {
         'total_archivos': len(resultados),
-        'total_clases': sum(datos['clases']['total'] for datos en resultados.values()),
-        'total_funciones': sum(datos['funciones']['total'] for datos en resultados.values()),
-        'total_variables': sum(datos['variables']['total'] for datos en resultados.values()),
-        'total_librerias': sum(datos['librerias']['total'] for datos en resultados.values()),
-        'complejidad_promedio': sum(datos['complejidad']['complejidad_ciclomatica'] for datos en resultados.values()) / len(resultados) if resultados else 0
+        'total_clases': sum(datos['clases']['total'] for datos in resultados.values()),  # Cambiado "en" a "in"
+        'total_funciones': sum(datos['funciones']['total'] for datos in resultados.values()),
+        'total_variables': sum(datos['variables']['total'] for datos in resultados.values()),
+        'total_librerias': sum(datos['librerias']['total'] for datos in resultados.values()),
+        'complejidad_promedio': sum(datos['complejidad']['complejidad_ciclomatica'] for datos in resultados.values()) / len(resultados) if resultados else 0
     }
     
     return {
