@@ -40,6 +40,12 @@ jobs:
         path: output/
         if-no-files-found: warn
     
+    # Display the output to the logs
+    - name: Display output
+      run: |
+        cat output/* || echo "No output found"
+      shell: bash
+
     - name: Always succeed
       if: always()
       run: |
