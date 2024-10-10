@@ -24,7 +24,7 @@ int main() {
     estudiantes.push_back(Estudiante("Juan", 20, {8.5, 9.0, 7.5}));
     estudiantes.push_back(Estudiante("Maria", 22, {9.5, 8.0, 9.5}));
     estudiantes.push_back(Estudiante("Carlos", 21, {7.0, 8.5, 8.0}));
-
+//
     // Mostrar información de los estudiantes
     for (const auto& estudiante : estudiantes) {
         cout << "Nombre: " << estudiante.getNombre() << endl;
