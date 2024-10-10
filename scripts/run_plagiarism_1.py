@@ -5,7 +5,6 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from transformers import AutoTokenizer, AutoModel
 import torch
-import json
 import nltk
 from nltk.corpus import wordnet
 import spacy
@@ -179,14 +178,8 @@ def main():
     # Generar el reporte de análisis
     ruta_reporte = os.path.join(ruta_salida, f"reporte_analisis_codigo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md")
     generar_reporte(resultados, ruta_reporte)
-    
-    # Exportar los datos completos en formato JSON
-    ruta_datos = os.path.join(ruta_salida, f"datos_analisis_codigo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
-    with open(ruta_datos, 'w', encoding='utf-8') as f:
-        json.dump(resultados, f, ensure_ascii=False, indent=2)
 
     print(f"Análisis completado. Reporte guardado en {ruta_reporte}")
-    print(f"Datos completos guardados en {ruta_datos}")
 
 if __name__ == "__main__":
     main()
