@@ -26,11 +26,11 @@ jobs:
         python scripts/analyze_structure.py
       shell: bash
     
-    - name: Upload output as artifact
+    - name: Upload output files
       uses: actions/upload-artifact@v4
       with:
-        name: analyze_structure
-        path: output/
+        name: analyze_structure_output
+        path: output/*.md
         if-no-files-found: warn
     
     - name: Always succeed
