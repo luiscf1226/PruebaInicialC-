@@ -29,7 +29,11 @@ jobs:
         pip install -r requirements/run_plagiarism_1.txt
         python -m spacy download es_core_news_sm
         python -m nltk.downloader wordnet
-    
+    # Clean the output directory to avoid repeated files
+    - name: Clean output directory
+      run: |
+        rm -rf output/* || true  # Ensure the directory is clean before running the script
+        
     - name: Run plagiarism script
       run: |
         python scripts/run_plagiarism_1.py
