@@ -27,7 +27,11 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements/analyze_spelling.txt
-    
+    # Clean the output directory to avoid repeated files
+    - name: Clean output directory
+      run: |
+        rm -rf output/* || true  # Ensure the directory is clean before running the script
+        
     - name: Run analyze spelling script
       run: |
         python scripts/analyze_spelling.py
