@@ -1,9 +1,15 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include "estudiante.h"
 
 using namespace std;
+
+// Estructura para representar a un estudiante
+struct Estudiante {
+    string nombre;
+    int edad;
+    vector<double> calificaciones;
+};
 
 // Función para calcular el promedio de calificaciones
 double calcularPromedio(const vector<double>& calificaciones) {
@@ -17,21 +23,25 @@ double calcularPromedio(const vector<double>& calificaciones) {
     return suma / calificaciones.size();
 }
 
+// Función para mostrar la información de un estudiante
+void mostrarEstudiante(const Estudiante& estudiante) {
+    cout << "Nombre: " << estudiante.nombre << endl;
+    cout << "Edad: " << estudiante.edad << endl;
+    cout << "Promedio: " << calcularPromedio(estudiante.calificaciones) << endl;
+    cout << "------------------------" << endl;
+}
+
 int main() {
-    vector<Estudiante> estudiantes;
+    vector<Estudiante> estudiantes = {
+        {"Juan", 20, {8.5, 9.0, 7.5}},
+        {"Maria", 22, {9.5, 8.0, 9.5}},
+        {"Carlos", 21, {7.0, 8.5, 8.0}}
+    };
     
-    // Crear algunos estudiantes de ejemplo
-    estudiantes.push_back(Estudiante("Juan", 20, {8.5, 9.0, 7.5}));
-    estudiantes.push_back(Estudiante("Maria", 22, {9.5, 8.0, 9.5}));
-    estudiantes.push_back(Estudiante("Carlos", 21, {7.0, 8.5, 8.0}));
-//
     // Mostrar información de los estudiantes
     for (const auto& estudiante : estudiantes) {
-        cout << "Nombre: " << estudiante.getNombre() << endl;
-        cout << "Edad: " << estudiante.getEdad() << endl;
-        cout << "Promedio: " << calcularPromedio(estudiante.getCalificaciones()) << endl;
-        cout << "------------------------" << endl;
+        mostrarEstudiante(estudiante);
     }
-////
+
     return 0;
 }
