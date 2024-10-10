@@ -3,36 +3,35 @@ on:
   push:
     paths:
       - 'scripts/analyze_structure.py'
-      - 'src/**'
+      - 'src/'
   pull_request:
     paths:
       - 'scripts/analyze_structure.py'
-      - 'src/**'
+      - 'src/'
   workflow_dispatch:
-
 jobs:
   run_analyze_structure:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Set up Python 3.12.5
       uses: actions/setup-python@v4
       with:
         python-version: '3.12.5'
-    
+
     - name: Run analyze_structure.py
       run: |
         python scripts/analyze_structure.py
       shell: bash
-    
-    - name: Upload output files
-      uses: actions/upload-artifact@v4
-      with:
-        name: analyze_structure_output
-        path: output/*.md
-        if-no-files-found: warn
-    
+
+    # Print the output to the logs instead of uploading as a zip
+    - name: Display output
+      run: |
+        cat output/* || echo "No output found"
+      shell: bash
+
+    # Always succeed
     - name: Always succeed
       if: always()
       run: |
