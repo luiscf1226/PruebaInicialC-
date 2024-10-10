@@ -26,7 +26,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install cpplint
     
-    - name: Run analyze_indentation.py
+    - name: Run analyze_identation.py
       run: |
         python scripts/analyze_identation.py
       shell: bash
@@ -37,6 +37,12 @@ jobs:
         name: analyze_identation_report
         path: output/
         if-no-files-found: warn
+    
+    # Display the output to the logs
+    - name: Display output
+      run: |
+        cat output/* || echo "No output found"
+      shell: bash
     
     - name: Always succeed
       if: always()
