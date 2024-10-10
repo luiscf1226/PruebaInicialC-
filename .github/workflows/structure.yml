@@ -19,7 +19,11 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.12.5'
-
+# Clean the output directory to avoid repeated files
+    - name: Clean output directory
+      run: |
+        rm -rf output/* || true  # Ensure the directory is clean before running the script
+        
     - name: Run analyze_structure.py
       run: |
         python scripts/analyze_structure.py
