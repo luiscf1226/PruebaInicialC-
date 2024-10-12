@@ -1,47 +1,25 @@
+// main.cpp
 #include <iostream>
-#include <vector>
-#include <string>
-
-using namespace std;
-
-// Estructura para representar a un estudiante
-struct Estudiante {
-    string nombre;
-    int edad;
-    vector<double> calificaciones;
-};
-
-// Función para calcular el promedio de calificaciones
-double calcularPromedio(const vector<double>& calificaciones) {
-    if (calificaciones.empty()) {
-        return 0.0;
-    }
-    double suma = 0.0;
-    for (const auto& calificacion : calificaciones) {
-        suma += calificacion;
-    }
-    return suma / calificaciones.size();
-}
-
-// Función para mostrar la información de un estudiante
-void mostrarEstudiante(const Estudiante& estudiante) {
-    cout << "Nombre: " << estudiante.nombre << endl;
-    cout << "Edad: " << estudiante.edad << endl;
-    cout << "Promedio: " << calcularPromedio(estudiante.calificaciones) << endl;
-    cout << "------------------------" << endl;
-}
+#include "ClaseRectangulo.h"
+#include "ClaseCirculo.h"
+#include "ClaseTriangulo.h"
 
 int main() {
-    vector<Estudiante> estudiantes = {
-        {"Juan", 20, {8.5, 9.0, 7.5}},
-        {"Maria", 22, {9.5, 8.0, 9.5}},
-        {"Carlos", 21, {7.0, 8.5, 8.0}}
-    };
-    
-    // Mostrar información de los estudiantes
-    for (const auto& estudiante : estudiantes) {
-        mostrarEstudiante(estudiante);
-    }
+    // Crear un rectángulo de largo 5 y ancho 3
+    ClaseRectangulo rectangulo(5.0, 3.0);
+    std::cout << "Área del rectángulo: " << rectangulo.calcularArea() << std::endl;
+    std::cout << "Perímetro del rectángulo: " << rectangulo.calcularPerimetro() << std::endl;
+
+    // Crear un círculo de radio 4
+    ClaseCirculo circulo(4.0);
+    std::cout << "Área del círculo: " << circulo.calcularArea() << std::endl;
+    std::cout << "Perímetro del círculo: " << circulo.calcularPerimetro() << std::endl;
+
+    // Crear un triángulo de base 6 y altura 4
+    ClaseTriangulo triangulo(6.0, 4.0);
+    std::cout << "Área del triángulo: " << triangulo.calcularArea() << std::endl;
+    std::cout << "Perímetro del triángulo: " << triangulo.calcularPerimetro() << std::endl;
 
     return 0;
 }
+

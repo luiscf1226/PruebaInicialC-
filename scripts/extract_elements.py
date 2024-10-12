@@ -51,64 +51,43 @@ def calcular_complejidad(contenido):
     }
     return complejidad
 
-def analizar_archivos(carpetas_proyecto):
-    resultados = {}
+def analizar_archivo(ruta_completa):
+    contenido = leer_archivo(ruta_completa)
+    if contenido is None:
+        return None
     
-    for carpeta in carpetas_proyecto:
-        for raiz, _, archivos in os.walk(carpeta):
-            for archivo in archivos:
-                if archivo.endswith(('.cpp', '.h')):
-                    ruta_completa = os.path.join(raiz, archivo)
-                    contenido = leer_archivo(ruta_completa)
-                    if contenido is None:
-                        continue
-                    
-                    elementos = extraer_elementos(contenido)
-                    complejidad = calcular_complejidad(contenido)
-                    
-                    resultados[ruta_completa] = {
-                        'clases': {
-                            'nombres': elementos['clases'],
-                            'total': len(elementos['clases']),
-                            'existe': len(elementos['clases']) > 0
-                        },
-                        'funciones': {
-                            'nombres': elementos['funciones'],
-                            'total': len(elementos['funciones']),
-                            'existe': len(elementos['funciones']) > 0
-                        },
-                        'variables': {
-                            'nombres': elementos['variables'],
-                            'total': len(elementos['variables'])
-                        },
-                        'comentarios': {
-                            'total': len(elementos['comentarios']),
-                            'contenido': elementos['comentarios']
-                        },
-                        'librerias': {
-                            'nombres': elementos['librerias'],
-                            'total': len(elementos['librerias'])
-                        },
-                        'complejidad': complejidad
-                    }
-    
-    estadisticas_globales = {
-        'total_archivos': len(resultados),
-        'total_clases': sum(datos['clases']['total'] for datos in resultados.values()),  # Cambiado "en" a "in"
-        'total_funciones': sum(datos['funciones']['total'] for datos in resultados.values()),
-        'total_variables': sum(datos['variables']['total'] for datos in resultados.values()),
-        'total_librerias': sum(datos['librerias']['total'] for datos in resultados.values()),
-        'complejidad_promedio': sum(datos['complejidad']['complejidad_ciclomatica'] for datos in resultados.values()) / len(resultados) if resultados else 0
-    }
+    elementos = extraer_elementos(contenido)
+    complejidad = calcular_complejidad(contenido)
     
     return {
-        'archivos': resultados,
-        'estadisticas_globales': estadisticas_globales
+        'clases': {
+            'nombres': elementos['clases'],
+            'total': len(elementos['clases']),
+            'existe': len(elementos['clases']) > 0
+        },
+        'funciones': {
+            'nombres': elementos['funciones'],
+            'total': len(elementos['funciones']),
+            'existe': len(elementos['funciones']) > 0
+        },
+        'variables': {
+            'nombres': elementos['variables'],
+            'total': len(elementos['variables'])
+        },
+        'comentarios': {
+            'total': len(elementos['comentarios']),
+            'contenido': elementos['comentarios']
+        },
+        'librerias': {
+            'nombres': elementos['librerias'],
+            'total': len(elementos['librerias'])
+        },
+        'complejidad': complejidad
     }
 
-def guardar_resultados(resultados, ruta_salida):
+def guardar_resultado(resultado, ruta_salida):
     with open(ruta_salida, 'w', encoding='utf-8') as f:
-        json.dump(resultados, f, indent=2, ensure_ascii=False)
+        json.dump(resultado, f, indent=2, ensure_ascii=False)
 
 def main():
     print("🔍 Iniciando análisis de código...")
@@ -117,21 +96,27 @@ def main():
     ruta_output = os.path.join(ruta_proyecto, 'output')
     os.makedirs(ruta_output, exist_ok=True)
 
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    ruta_resultados = os.path.join(ruta_output, f'analisis_codigo_{timestamp}.json')
-
     print("🔎 Buscando carpetas del proyecto...")
     carpetas_proyecto = buscar_carpetas_proyecto(ruta_src)
 
     print(f"📂 Carpetas encontradas: {len(carpetas_proyecto)}")
     print("📊 Analizando archivos...")
-    resultados = analizar_archivos(carpetas_proyecto)
     
-    print("💾 Guardando resultados detallados...")
-    guardar_resultados(resultados, ruta_resultados)
+    for carpeta in carpetas_proyecto:
+        for raiz, _, archivos in os.walk(carpeta):
+            for archivo in archivos:
+                if archivo.endswith(('.cpp', '.h')):
+                    ruta_completa = os.path.join(raiz, archivo)
+                    resultado = analizar_archivo(ruta_completa)
+                    
+                    if resultado:
+                        nombre_base = os.path.splitext(archivo)[0]
+                        ruta_resultado = os.path.join(ruta_output, f'analisis_{nombre_base}.json')
+                        guardar_resultado({archivo: resultado}, ruta_resultado)
+                        print(f"✅ Análisis completado para {archivo}")
+                        print(f"📊 Resultados guardados en: {ruta_resultado}")
 
-    print(f"✅ Análisis completado.")
-    print(f"📊 Resultados detallados guardados en: {ruta_resultados}")
+    print("🎉 Análisis de todos los archivos completado.")
 
 if __name__ == "__main__":
     main()
