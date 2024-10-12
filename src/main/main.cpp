@@ -15,7 +15,7 @@ int main() {
     std::cout << "Área del círculo: " << circulo.calcularArea() << std::endl;
     std::cout << "Perímetro del círculo: " << circulo.calcularPerimetro() << std::endl;
 
-    // Crear un triángulo de base 6 y altura 4
+    // Crear un triángulo de base 6 y altura 4.
     ClaseTriangulo triangulo(6.0, 4.0);
     std::cout << "Área del triángulo: " << triangulo.calcularArea() << std::endl;
     std::cout << "Perímetro del triángulo: " << triangulo.calcularPerimetro() << std::endl;
