@@ -1,8 +1,10 @@
 import os
 import re
 import json
+import subprocess
 from collections import Counter
 from datetime import datetime
+import hashlib
 
 def leer_archivo(ruta_archivo):
     encodings = ['utf-8', 'latin-1', 'ISO-8859-1']
@@ -38,10 +40,10 @@ def extraer_elementos(contenido):
         'librerias': librerias
     }
 
-def calcular_complejidad(contenido):
-    estructuras_control = re.findall(r'\b(if|else|for|while|switch|case)\b', contenido)
-    operadores_logicos = re.findall(r'\b(&&|\|\|)\b', contenido)
-    llamadas_funciones = re.findall(r'\b\w+\s*\(', contenido)
+def calcular_complejidad_funcion(contenido_funcion):
+    estructuras_control = re.findall(r'\b(if|else|for|while|switch|case)\b', contenido_funcion)
+    operadores_logicos = re.findall(r'\b(&&|\|\|)\b', contenido_funcion)
+    llamadas_funciones = re.findall(r'\b\w+\s*\(', contenido_funcion)
     
     complejidad = {
         'estructuras_control': Counter(estructuras_control),
@@ -51,13 +53,44 @@ def calcular_complejidad(contenido):
     }
     return complejidad
 
+def extraer_funciones_con_complejidad(contenido):
+    patron_funcion = r'\b(\w+)\s*\([^)]*\)\s*(?:const)?\s*(?:override)?\s*{([^}]*)}'
+    funciones = re.findall(patron_funcion, contenido, re.DOTALL)
+    funciones_con_complejidad = {}
+    for nombre_funcion, contenido_funcion in funciones:
+        complejidad = calcular_complejidad_funcion(contenido_funcion)
+        funciones_con_complejidad[nombre_funcion] = complejidad
+    return funciones_con_complejidad
+
+def ejecutar_cpplint(ruta_archivo):
+    try:
+        resultado = subprocess.run(
+            ['cpplint', '--filter=-whitespace/comments', ruta_archivo],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        return resultado.stderr
+    except Exception as e:
+        return f"Error ejecutando cpplint en {ruta_archivo}: {str(e)}"
+
+def analizar_indentacion(salida_cpplint):
+    errores_indentacion = [error for error in salida_cpplint.split('\n') if 'whitespace/indent' in error]
+    return len(errores_indentacion) == 0
+
+def calcular_hash_contenido(contenido):
+    return hashlib.md5(contenido.encode()).hexdigest()
+
 def analizar_archivo(ruta_completa):
     contenido = leer_archivo(ruta_completa)
     if contenido is None:
         return None
     
     elementos = extraer_elementos(contenido)
-    complejidad = calcular_complejidad(contenido)
+    funciones_con_complejidad = extraer_funciones_con_complejidad(contenido)
+    salida_cpplint = ejecutar_cpplint(ruta_completa)
+    indentacion_correcta = analizar_indentacion(salida_cpplint)
+    hash_contenido = calcular_hash_contenido(contenido)
     
     return {
         'clases': {
@@ -68,7 +101,8 @@ def analizar_archivo(ruta_completa):
         'funciones': {
             'nombres': elementos['funciones'],
             'total': len(elementos['funciones']),
-            'existe': len(elementos['funciones']) > 0
+            'existe': len(elementos['funciones']) > 0,
+            'complejidad': funciones_con_complejidad
         },
         'variables': {
             'nombres': elementos['variables'],
@@ -82,7 +116,8 @@ def analizar_archivo(ruta_completa):
             'nombres': elementos['librerias'],
             'total': len(elementos['librerias'])
         },
-        'complejidad': complejidad
+        'indentacion_correcta': indentacion_correcta,
+        'hash_contenido': hash_contenido
     }
 
 def guardar_resultado(resultado, ruta_salida):
@@ -102,6 +137,7 @@ def main():
     print(f"📂 Carpetas encontradas: {len(carpetas_proyecto)}")
     print("📊 Analizando archivos...")
     
+    resultados_globales = {}
     for carpeta in carpetas_proyecto:
         for raiz, _, archivos in os.walk(carpeta):
             for archivo in archivos:
@@ -113,10 +149,27 @@ def main():
                         nombre_base = os.path.splitext(archivo)[0]
                         ruta_resultado = os.path.join(ruta_output, f'analisis_{nombre_base}.json')
                         guardar_resultado({archivo: resultado}, ruta_resultado)
+                        resultados_globales[archivo] = resultado
                         print(f"✅ Análisis completado para {archivo}")
                         print(f"📊 Resultados guardados en: {ruta_resultado}")
 
-    print("🎉 Análisis de todos los archivos completado.")
+    # Análisis de posible plagio
+    hashes_unicos = set()
+    archivos_duplicados = []
+    for archivo, resultado in resultados_globales.items():
+        if resultado['hash_contenido'] in hashes_unicos:
+            archivos_duplicados.append(archivo)
+        else:
+            hashes_unicos.add(resultado['hash_contenido'])
+
+    if archivos_duplicados:
+        print("\n⚠️ Posible plagio detectado en los siguientes archivos:")
+        for archivo in archivos_duplicados:
+            print(f"  - {archivo}")
+    else:
+        print("\n✅ No se detectaron archivos duplicados.")
+
+    print("\n🎉 Análisis de todos los archivos completado.")
 
 if __name__ == "__main__":
     main()

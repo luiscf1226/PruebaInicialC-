@@ -1,16 +1,8 @@
 {
   "steps": [
     {
-      "input": "1",
-      "description": "Seleccionar opción 1 del menú principal"
-    },
-    {
-      "input": "Juan",
-      "description": "Ingresar nombre del usuario"
-    },
-    {
       "input": "25",
-      "description": "Ingresar edad del usuario"
+      "description": "Ingresar la edad del usuario"
     }
   ]
 }
