@@ -7,9 +7,8 @@ Este es el repositorio para tu proyecto C++ en Visual Studio.
 1. Clona este repositorio.
 2. Crea tu proyecto en Visual Studio.
 3. Copia todos los archivos de tu proyecto a la carpeta 'src' de este repositorio.
-4. Asegúrate de que tu programa principal se llame 'main.cpp' y esté en la carpeta 'src'.
-5. Actualiza este README con la información específica de tu proyecto.
-
+4. Asegúrate de que tu programa y carpeta principal esté en la carpeta 'src'.
+   
 ## Estructura del Proyecto
 
 - src/: Contiene los archivos fuente de tu proyecto.
@@ -24,14 +23,3 @@ Este es el repositorio para tu proyecto C++ en Visual Studio.
 - Asegúrate de no subir archivos binarios o de compilación al repositorio.
 - Mantén tu código limpio y bien documentado.
 - Sigue las mejores prácticas de programación en C++.
-# pruebasonarqube
-# pruebasonarqube
-# pruebasonarqube
-# pruebasonarqube
-# pruebasonarqube
-# pruebasonarqube
-# pruebasonarqube
-# pruebasonarqube
-# pruebasonarqube
-# pruebasonarqube
-# PruebaC-PG
